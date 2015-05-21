@@ -29,7 +29,7 @@ class LogReader(threading.Thread):
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
         conf = ConfigParser.RawConfigParser()
-        conf.read('/etc/systemd-denotify.conf')
+        conf.read('/etc/systemd-mailify.conf')
         subject = conf.get("JournalReader", "subject")
         config_message = conf.get("JournalReader", "message")
         mail_from = conf.get("JournalReader", "mail_from")
