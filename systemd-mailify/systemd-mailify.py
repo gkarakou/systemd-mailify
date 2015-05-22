@@ -31,20 +31,16 @@ class LogReader(threading.Thread):
         conf.read('/etc/systemd-mailify.conf')
 
         #parse [EMAIL]
-        mailify = conf.getboolean("EMAIL", "start")
 
-        if mailify and mailify == True:
-            conf_dict = {}
-            subject = conf.get("EMAIL", "subject")
-            config_message = conf.get("EMAIL", "body")
-            mail_from = conf.get("EMAIL", "mail_from")
-            mail_to = conf.get("EMAIL", "mail_to")
-            conf_dict['email_subject'] = subject
-            conf_dict['email_message'] = config_message
-            conf_dict['email_to'] = mail_to
-            conf_dict['email_from'] = mail_from
-        else:
-            return False
+        conf_dict = {}
+        subject = conf.get("EMAIL", "subject")
+        config_message = conf.get("EMAIL", "body")
+        mail_from = conf.get("EMAIL", "mail_from")
+        mail_to = conf.get("EMAIL", "mail_to")
+        conf_dict['email_subject'] = subject
+        conf_dict['email_message'] = config_message
+        conf_dict['email_to'] = mail_to
+        conf_dict['email_from'] = mail_from
 
         #parse [AUTH]
 
@@ -62,16 +58,17 @@ class LogReader(threading.Thread):
         smtp = conf.getboolean("SMTP", "start")
         if smtp and smtp == True:
             conf_dict['smtp'] = True
-            smtp_host = conf.get("SMTP", "host")
-            if not smtp_host:
-                smtp_host = "localhost"
-            conf_dict['smtp_host'] = smtp_host
-            smtp_port = conf.getint("SMTP", "port")
-            if not smtp_port:
-                smtp_port = 25
-            conf_dict['smtp_port'] = smtp_port
         else:
             conf_dict['smtp'] = False
+        smtp_host = conf.get("SMTP", "host")
+        #if smtp_host == "":
+        #    smtp_host = "localhost"
+        conf_dict['smtp_host'] = smtp_host
+        smtp_port = conf.getint("SMTP", "port")
+        #if not smtp_port or smtp_port is None:
+        #    smtp_port = 25
+        conf_dict['smtp_port'] = smtp_port
+
         #parse [SMTPS]
         smtps = conf.getboolean("SMTPS", "start")
         if smtps and smtps == True:
@@ -144,38 +141,43 @@ class LogReader(threading.Thread):
                         try:
                             string = entry['MESSAGE']
                             if string and pattern in string:
-                                msg = MIMEMultipart('alternative')
+                                #msg = MIMEMultipart('alternative')
+                                msg = MIMEText(string)
                                 msg['Subject'] = dictionary['email_subject']
                                 msg['From'] = dictionary['email_from']
                                 msg['To'] = dictionary['email_to']
                                 # Record the MIME types of parts - text/plain.
-                                part1 = MIMEText(dictionary['email_message'], 'plain')
-                                part2 = MIMEText(string, 'plain')
-                                msg.attach(part1)
-                                msg.attach(part2)
+                                #part1 = MIMEText(dictionary['email_message'], 'plain')
+                                #part2 = MIMEText(string, 'plain')
+                                #msg.attach(part1)
+                                #msg.attach(part2)
                                 #smtp ?
                                 if dictionary['smtp'] and dictionary['smtp'] == True:
                                     # no auth ?
                                     if dictionary['auth'] and dictionary['auth'] == False:
                                         try:
-                                            s = smtplib.SMTP(dictionary['smtp_host'], dictionary['smtp_port'])
-                                            s.sendmail(msg['From'], msg['To'], msg.as_string())
+                                            s = smtplib.SMTP('localhost')
+                                            #s = smtplib.SMTP(host=dictionary['smtp_host'], port=dictionary['smtp_port'])
+                                            s.set_debuglevel(1)
+                                            #s.sendmail(msg['From'], msg['To'], msg.as_string())
+                                            s.sendmail("root@localhost", "geo@localhost", msg.as_string())
                                             s.quit()
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
+                                            journal.send("systemd-mailify: " + " inside smtplib.SMTP " + message)
                                     # auth
-                                    else:
+                                    elif dictionary['auth'] and dictionary['auth'] == True:
                                         try:
-                                            s = smtplib.SMTP(dictionary['host'], dictionary['port'])
+                                            s = smtplib.SMTP(dictionary['smtp_host'])
+                                            #s = smtplib.SMTP(host=dictionary['smtp_host'], port=dictionary['smtp_port'])
                                             s.login(dictionary['auth_user'], dictionary['auth_password'])
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
                                             s.quit()
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
+                                            journal.send("systemd-mailify: " + " inside smtplib.SMTP " + message)
                                 #smtps ?
                                 if dictionary['smtps'] and dictionary['smtps'] == True:
                                     # no auth ?
@@ -190,7 +192,7 @@ class LogReader(threading.Thread):
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
                                     # auth
-                                    else:
+                                    elif dictionary['auth'] and dictionary['auth'] == True:
                                         try:
                                             s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
                                             s.login(dictionary['auth_user'], dictionary['auth_password'])
@@ -207,7 +209,7 @@ class LogReader(threading.Thread):
                                     if dictionary['auth'] and dictionary['auth'] == False:
                                         try:
                                             s = smtplib.SMTP(dictionary['starttls_host'], dictionary['starttls_port'])
-                                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_certfile'])
+                                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
                                           #ehlo ?
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
                                             s.close()
@@ -217,10 +219,10 @@ class LogReader(threading.Thread):
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
                                     # auth
-                                    else:
+                                    elif dictionary['auth'] and dictionary['auth'] == True:
                                         try:
                                             s = smtplib.SMTP(dictionary['starttls_host'], dictionary['starttls_port'])
-                                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_certfile'])
+                                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
                                             #ehlo?
                                             s.login(dictionary['auth_user'], dictionary['auth_password'])
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
@@ -243,18 +245,6 @@ class LogReader(threading.Thread):
             else:
                 pass
             continue
-
-    def __del__(self):
-        """__del__
-        return parent destructor or del objects
-        :desc: destructor function that wont run because the gc will run first, but we provide it for completeness
-        """
-        if callable(getattr(threading.Thread, "__del__")):
-            super.__del__()
-            return
-        else:
-            del self.run
-            return
 
 
 if __name__ == "__main__":
@@ -285,5 +275,5 @@ if __name__ == "__main__":
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
         lg = LogReader()
-        lg.daemon = True
-        lg.start()
+        #lg.daemon = True
+        lg.run()
