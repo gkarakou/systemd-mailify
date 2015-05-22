@@ -66,7 +66,7 @@ class LogReader(threading.Thread):
             if not smtp_host:
                 smtp_host = "localhost"
             conf_dict['smtp_host'] = smtp_host
-            smtp_port = conf.get("SMTP", "port")
+            smtp_port = conf.getint("SMTP", "port")
             if not smtp_port:
                 smtp_port = 25
             conf_dict['smtp_port'] = smtp_port
@@ -80,7 +80,7 @@ class LogReader(threading.Thread):
             if not smtps_host:
                 smtps_host = "localhost"
             conf_dict['smtps_host'] = smtps_host
-            smtps_port = conf.get("SMTPS", "port")
+            smtps_port = conf.getint("SMTPS", "port")
             if not smtps_port:
                 smtps_port = 465
             conf_dict['smtps_port'] = smtps_port
@@ -99,7 +99,7 @@ class LogReader(threading.Thread):
             if not starttls_host:
                 starttls_host = "localhost"
             conf_dict['starttls_host'] = starttls_host
-            starttls_port = conf.get("STARTTLS", "port")
+            starttls_port = conf.getint("STARTTLS", "port")
             if not starttls_port:
                 starttls_port = 465
             conf_dict['starttls_port'] = starttls_port
