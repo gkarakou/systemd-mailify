@@ -1,10 +1,15 @@
 #!/usr/bin/python2
 import threading
+import time
+import datetime
 import select
 from systemd import journal
 from threading import Thread
 import ConfigParser
+import smtplib
 
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 class LogReader(threading.Thread):
     """
@@ -21,6 +26,26 @@ class LogReader(threading.Thread):
         """
         Thread.__init__(self)
 
+    def parse_config(self):
+        conf = ConfigParser.RawConfigParser()
+        conf.read('/etc/systemd-mailify.conf')
+        subject = conf.get("JournalReader", "subject")
+        host = conf.get("JournalReader", "smtp")
+        config_message = conf.get("JournalReader", "message")
+        mail_from = conf.get("JournalReader", "mail_from")
+        mail_to = conf.get("JournalReader", "mail_to")
+        auth_user = conf.get("JournalReader", "auth_user")
+        auth_password = conf.get("JournalReader", "auth_password")
+        conf_dict = {}
+        conf_dict['subject'] = subject
+        conf_dict['host'] = host
+        conf_dict['config_message'] = config_message
+        conf_dict['mail_to'] = mail_to
+        conf_dict['mail_from'] = mail_from
+        conf_dict['auth_user'] = auth_user
+        conf_dict['auth_password'] = auth_password
+        return conf_dict
+
     def run(self):
         """
         run
@@ -28,15 +53,7 @@ class LogReader(threading.Thread):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
-        conf = ConfigParser.RawConfigParser()
-        conf.read('/etc/systemd-mailify.conf')
-        subject = conf.get("JournalReader", "subject")
-        config_message = conf.get("JournalReader", "message")
-        mail_from = conf.get("JournalReader", "mail_from")
-        mail_to = conf.get("JournalReader", "mail_to")
-        auth_user = conf.get("JournalReader", "auth_user")
-        auth_password = conf.get("JournalReader", "auth_password")
-        #smtp = conf.get("JournalReader", "smtp")
+        dictionary = self.parse_config()
         j_reader = journal.Reader()
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
@@ -62,19 +79,40 @@ class LogReader(threading.Thread):
                         try:
                             string = entry['MESSAGE']
                             if string and pattern in string:
-                                body = config_message + string
-                                try:
-                                    send_mail(subject, body, mail_from, [mail_to], auth_user=auth_user, auth_password=auth_password)
-                                except Exception as ex:
-                                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                    message = template.format(type(ex).__name__, ex.args)
-                                    journal.send("systemd-denotify: "+message)
+                                msg = MIMEMultipart('alternative')
+                                msg['Subject'] = dictionary['subject']
+                                msg['From'] = dictionary['mail_from']
+                                msg['To'] = dictionary['mail_to']
+                                # Record the MIME types of parts - text/plain.
+                                part1 = MIMEText(dictionary['config_message'], 'plain')
+                                part2 = MIMEText(string, 'plain')
+                                msg.attach(part1)
+                                msg.attach(part2)
+                                if dictionary['auth_user'] and dictionary['auth_password']:
+                                    try:
+                                        s = smtplib.SMTP(dictionary['host'])
+                                        s.sendmail(msg['From'], msg['To'], msg.as_string())
+                                        s.quit()
+                                    except Exception as ex:
+                                        template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                                        message = template.format(type(ex).__name__, ex.args)
+                                        journal.send("systemd-mailify: "+message)
+                                else:
+                                    try:
+                                        s = smtplib.SMTP(dictionary['host'])
+                                        s.login(dictionary['auth_user'], dictionary['auth_password'])
+                                        s.sendmail(msg['From'], msg['To'], msg.as_string())
+                                        s.quit()
+                                    except Exception as ex:
+                                        template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                                        message = template.format(type(ex).__name__, ex.args)
+                                        journal.send("systemd-mailify: "+message)
                             else:
                                 continue
                         except Exception as ex:
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
-                            journal.send("systemd-denotify: "+message)
+                            journal.send("systemd-mailify: "+message)
                     else:
                         continue
             else:
@@ -106,19 +144,19 @@ if __name__ == "__main__":
     except Exception as ex:
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
-        journal.send("systemd-denotify: "+message)
+        journal.send("systemd-mailify: "+message)
     try:
-        config.read('/etc/systemd-denotify.conf')
+        config.read('/etc/systemd-mailify.conf')
     except Exception as ex:
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
-        journal.send("systemd-denotify: "+message)
+        journal.send("systemd-mailify: "+message)
     try:
         config_logreader_start = config.getboolean("JournalReader", "start")
     except Exception as ex:
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
-        journal.send("systemd-denotify: "+message)
+        journal.send("systemd-mailify: "+message)
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
         lg = LogReader()
