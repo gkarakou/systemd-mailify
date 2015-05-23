@@ -144,11 +144,16 @@ class LogReader(threading.Thread):
                             if string and pattern in string:
                                 #http://pymotw.com/2/smtplib/
                                 msg = MIMEMultipart("alternative")
-                                part1 = MIMEText(string, "plain", "utf-8")
+                                stripped = string.strip()
+                                part1 = MIMEText(stripped, "plain")
                                 msg['Subject'] = dictionary['email_subject']
                                 msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
                                 msg['From'] = email.utils.formataddr(('Author', dictionary['email_from']))
                                 msg.attach(part1)
+                                print "printing msg"
+                                print msg.as_string()
+                                print "...stripped..."
+                                print msg.as_string().strip()
                                 #smtp
                                 if dictionary['smtp'] == True:
                                     # no auth
@@ -169,7 +174,7 @@ class LogReader(threading.Thread):
                                         s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
                                         try:
                                          #   s.ehlo_or_helo_if_needed()
-                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().encode('ascii'))
+                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                                         finally:
                                             s.quit()
                                     #else:
