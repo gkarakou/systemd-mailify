@@ -179,7 +179,6 @@ class LogReader(threading.Thread):
                                         try:
                                             s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'],certfile=dictionary['smtps_cert'])
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.close()
                                             s.quit()
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
@@ -187,16 +186,18 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                     # auth
                                     elif dictionary['auth'] == True:
+                                        s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                                        s.login(dictionary['auth_user'], dictionary['auth_password'])
+                                        s.ehlo_or_helo_if_needed()
                                         try:
-                                            s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
-                                            s.login(dictionary['auth_user'], dictionary['auth_password'])
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.close()
-                                            s.quit()
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
+                                        finally:
+                                            s.quit()
+
                                     else:
                                         pass
                                 #starttls ?
