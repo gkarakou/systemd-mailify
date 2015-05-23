@@ -9,7 +9,7 @@ from threading import Thread
 import ConfigParser
 import smtplib
 import email.utils
-#from email.mime.multipart import MIMEMultipart
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 class LogReader(threading.Thread):
@@ -168,7 +168,7 @@ class LogReader(threading.Thread):
                                         s.set_debuglevel(1)
                                         s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
                                         try:
-                                            s.ehlo_or_helo_if_needed()
+                                         #   s.ehlo_or_helo_if_needed()
                                             s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().encode('ascii'))
                                         finally:
                                             s.quit()
@@ -181,7 +181,6 @@ class LogReader(threading.Thread):
                                         try:
                                             s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'],certfile=dictionary['smtps_cert'])
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.close()
                                             s.quit()
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
@@ -193,7 +192,6 @@ class LogReader(threading.Thread):
                                             s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
                                             s.login(dictionary['auth_user'], dictionary['auth_password'])
                                             s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.close()
                                             s.quit()
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
