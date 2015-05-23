@@ -156,19 +156,22 @@ class LogReader(threading.Thread):
                                         s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                                         s.set_debuglevel(1)
                                         try:
-                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         finally:
                                             s.quit()
                                     # auth
-                                    elif dictionary['auth'] == True:
-                                            s = smtplib.SMTP()
-                                            s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
-                                            s.set_debuglevel(1)
-                                            s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
-                                            try:
-                                                s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                                            finally:
-                                                s.quit()
+                                    else:
+                                        s = smtplib.SMTP()
+                                        s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
+                                        s.set_debuglevel(1)
+                                        s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
+                                        s.ehlo_or_helo_if_needed()
+                                        try:
+                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                                        finally:
+                                            s.quit()
+                                    #else:
+                                    #    pass
                                 #smtps
                                 elif dictionary['smtps'] == True:
                                     # no auth ?
@@ -194,6 +197,8 @@ class LogReader(threading.Thread):
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
+                                    else:
+                                        pass
                                 #starttls ?
                                 elif dictionary['starttls'] == True:
                                     # no auth ?
@@ -224,6 +229,10 @@ class LogReader(threading.Thread):
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
 
+                                    else:
+                                        pass
+                                else:
+                                    pass
                             #back to normal journal reading
                             else:
                                 continue
