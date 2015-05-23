@@ -143,10 +143,12 @@ class LogReader(threading.Thread):
                             string = entry['MESSAGE']
                             if string and pattern in string:
                                 #http://pymotw.com/2/smtplib/
-                                msg = MIMEText(string)
+                                msg = MIMEMultipart("alternative")
+                                part1 = MIMEText(string, "plain", "utf-8")
                                 msg['Subject'] = dictionary['email_subject']
                                 msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
                                 msg['From'] = email.utils.formataddr(('Author', dictionary['email_from']))
+                                msg.attach(part1)
                                 #smtp
                                 if dictionary['smtp'] == True:
                                     # no auth
@@ -165,9 +167,9 @@ class LogReader(threading.Thread):
                                         s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                                         s.set_debuglevel(1)
                                         s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
-                                        s.ehlo_or_helo_if_needed()
                                         try:
-                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                                            s.ehlo_or_helo_if_needed()
+                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().encode('ascii'))
                                         finally:
                                             s.quit()
                                     #else:
