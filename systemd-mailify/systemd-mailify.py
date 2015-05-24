@@ -45,7 +45,7 @@ class LogReader(threading.Thread):
 
         #parse [AUTH]
 
-        auth = conf.getboolean("AUTH", "start")
+        auth = conf.getboolean("AUTH", "active")
         if auth and auth == True:
             auth_user = conf.get("AUTH", "auth_user")
             auth_password = conf.get("AUTH", "auth_password")
@@ -56,7 +56,7 @@ class LogReader(threading.Thread):
             conf_dict['auth'] = False
 
         #parse [SMTP]
-        smtp = conf.getboolean("SMTP", "start")
+        smtp = conf.getboolean("SMTP", "active")
         if smtp and smtp == True:
             conf_dict['smtp'] = True
         else:
@@ -71,7 +71,7 @@ class LogReader(threading.Thread):
         conf_dict['smtp_port'] = smtp_port
 
         #parse [SMTPS]
-        smtps = conf.getboolean("SMTPS", "start")
+        smtps = conf.getboolean("SMTPS", "active")
         if smtps and smtps == True:
             conf_dict['smtps'] = True
             smtps_host = conf.get("SMTPS", "host")
@@ -90,7 +90,7 @@ class LogReader(threading.Thread):
             conf_dict['smtps'] = False
 
         #parse [STARTTLS]
-        starttls = conf.getboolean("STARTTLS", "start")
+        starttls = conf.getboolean("STARTTLS", "active")
         if starttls and starttls == True:
             conf_dict['starttls'] = True
             starttls_host = conf.get("STARTTLS", "host")
