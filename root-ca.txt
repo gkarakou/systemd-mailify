@@ -1,0 +1,48 @@
+-------------------------------
+create rootca                 -
+-------------------------------
+cd /etc/pki/CA
+mkdir certs crl newcerts private
+chmod 700 private
+touch index.txt
+echo 1000 > serial
+
+openssl genrsa -aes256 -out /etc/pki/CA/private/ca.key.pem 4096
+chmod 400 /etc/pki/CA/private/ca.key.pem
+openssl req -new -x509 -days 3650 -key /etc/pki/CA/private/ca.key.pem -sha256 -extensions v3_ca -out /etc/pki/CA/certs/ca.cert.pem
+#Organization Name (eg, company) [Default Company Ltd]:Alice CA
+#Organizational Unit Name (eg, section) []:Certificate Authority
+#Common Name (eg, your name or your server's hostname) []:Alice CA
+#Email Address []:alice@example.com
+chmod 444 /etc/pki/CA/certs/ca.cert.pem
+
+---------------------------------------------------------------
+self-signed certs                                             -
+---------------------------------------------------------------
+
+cd /etc/pki/CA
+openssl genrsa -out private/www.example.com.key.pem 4096
+chmod 400 private/www.example.com.key.pem
+openssl req -sha256 -new -key private/www.example.com.key.pem -x509 -days 365 -out certs/www.example.com.csr.pem
+#Organization Name (eg, company) [Default Company Ltd]:Alice CA
+#Organizational Unit Name (eg, section) []:Web Certificate
+#Common Name (eg, your name or your server's hostname) []:www.example.com
+#Email Address []:webmaster@example.com
+openssl ca -keyfile private/ca.key.pem -cert certs/ca.cert.pem \
+    -extensions usr_cert -notext -md sha256 \
+    -in certs/www.example.com.csr.pem -out certs/www.example.com.cert.pem
+chmod 444 /etc/pki/CA/certs/www.example.com.cert.pem
+
+openssl verify -CAfile /etc/pki/CA/certs/ca.cert.pem \
+    /etc/pki/CA/certs/www.example.com.cert.pem
+
+
+-------------------------------------
+remove passphrase for systemd-mailify
+-------------------------------------
+cd /etc/pki/CA
+chmod 0600 private/www.example.com.key.pem
+openssl rsa -in private/www.example.com.key.pem -out private/www.example.com.nocrypt.key.pem
+chmod 400 private/www.example.com.nocrypt.key.pem
+
+#mv /etc/pki/CA/private/ca.key.pem /mnt/usb
