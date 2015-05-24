@@ -209,30 +209,38 @@ class LogReader(threading.Thread):
                                     # no auth ?
                                     if dictionary['auth'] == False:
                                         try:
-                                            s = smtplib.SMTP(dictionary['starttls_host'], dictionary['starttls_port'])
-                                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
-                                          #ehlo ?
-                                            s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.close()
-                                            s.quit()
+                                            s = smtplib.SMTP()
+                                            s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
+                                            s.ehlo()
+                                            if s.has_extn("STARTTLS"):
+
+                                                s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
+                                                s.ehlo()
+                                                send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
+                                        finally:
+                                            s.quit()
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
-                                            s = smtplib.SMTP(dictionary['starttls_host'], dictionary['starttls_port'])
-                                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
-                                            #ehlo?
-                                            s.login(dictionary['auth_user'], dictionary['auth_password'])
-                                            s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.close()
-                                            s.quit()
+                                            s = smtplib.SMTP()
+                                            s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
+                                            s.ehlo()
+                                            if s.has_extn("STARTTLS"):
+
+                                                s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
+                                                s.ehlo()
+                                                s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
+                                                send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
                                             journal.send("systemd-mailify: "+message)
+                                        finally:
+                                            s.quit()
 
                                     else:
                                         pass
