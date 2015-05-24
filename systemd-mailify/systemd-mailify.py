@@ -251,9 +251,10 @@ class LogReader(threading.Thread):
                                             s.ehlo()
                                             if s.has_extn("STARTTLS"):
 
-                                                s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
+                                                #s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
+                                                s.starttls()
                                                 s.ehlo()
-                                                s.login(dictionary['auth_user'], dictionary['auth_password'])
+                                                s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']).strip())
                                                 send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
