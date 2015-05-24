@@ -35,11 +35,11 @@ class LogReader(threading.Thread):
 
         conf_dict = {}
         subject = conf.get("EMAIL", "subject")
-        config_message = conf.get("EMAIL", "body")
+        #config_message = conf.get("EMAIL", "body")
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
         conf_dict['email_subject'] = subject
-        conf_dict['email_message'] = config_message
+        #conf_dict['email_message'] = config_message
         conf_dict['email_to'] = mail_to
         conf_dict['email_from'] = mail_from
 
@@ -150,10 +150,8 @@ class LogReader(threading.Thread):
                                 msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
                                 msg['From'] = email.utils.formataddr(('Author', dictionary['email_from']))
                                 msg.attach(part1)
-                                print "printing msg"
-                                print msg.as_string()
-                                print "...stripped..."
-                                print msg.as_string().strip()
+                                print "...got pattern?..."
+                                #print msg.as_string().strip()
                                 #smtp
                                 if dictionary['smtp'] == True:
                                     # no auth
@@ -164,10 +162,14 @@ class LogReader(threading.Thread):
                                         s.set_debuglevel(1)
                                         try:
                                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                                        except Exception as ex:
+                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                                            message = template.format(type(ex).__name__, ex.args)
+                                            journal.send("systemd-mailify-smtp-noauth: "+message)
                                         finally:
                                             s.quit()
                                     # auth
-                                    else:
+                                    elif dictionary['auth'] == True:
                                         s = smtplib.SMTP()
                                         s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                                         s.set_debuglevel(1)
@@ -175,12 +177,16 @@ class LogReader(threading.Thread):
                                         try:
                                          #   s.ehlo_or_helo_if_needed()
                                             s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
+                                        except Exception as ex:
+                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                                            message = template.format(type(ex).__name__, ex.args)
+                                            journal.send("systemd-mailify-smtp-auth: "+message)
                                         finally:
                                             s.quit()
-                                    #else:
-                                    #    pass
+                                    else:
+                                        pass
                                 #smtps
-                                elif dictionary['smtps'] == True:
+                                if dictionary['smtps'] == True:
                                     # no auth ?
                                     if  dictionary['auth'] == False:
                                         try:
@@ -195,7 +201,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
+                                            journal.send("systemd-mailify-smtps-noauth: "+message)
                                         finally:
                                             s.quit()
                                     # auth
@@ -213,12 +219,14 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
+                                            journal.send("systemd-mailify-smtps-auth: "+message)
                                         finally:
                                             s.quit()
-                                #starttls ?
-                                elif dictionary['starttls'] == True:
-                                    # no auth ?
+                                    else:
+                                        pass
+                                #starttls
+                                if dictionary['starttls'] == True:
+                                    # no auth
                                     if dictionary['auth'] == False:
                                         try:
                                             s = smtplib.SMTP()
@@ -232,7 +240,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
+                                            journal.send("systemd-mailify-starttls-noauth: "+message)
                                         finally:
                                             s.quit()
                                     # auth
@@ -245,19 +253,17 @@ class LogReader(threading.Thread):
 
                                                 s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
                                                 s.ehlo()
-                                                s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
+                                                s.login(dictionary['auth_user'], dictionary['auth_password'])
                                                 send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
+                                            journal.send("systemd-mailify-starttls-auth: "+message)
                                         finally:
                                             s.quit()
 
                                     else:
                                         pass
-                                else:
-                                    pass
                             #back to normal journal reading
                             else:
                                 continue
