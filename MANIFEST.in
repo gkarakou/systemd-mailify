@@ -1,4 +1,3 @@
 include README.txt
-include install_script.py
 recursive-include scripts/systemd-mailify.py
 recursive-include systemd-mailify/conf
