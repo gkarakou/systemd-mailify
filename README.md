@@ -4,6 +4,11 @@ GENERAL
 -------------------
 systemd-mailify is a slightly modified stripped down version of systemd-denotify with a minimum set of dependencies. Its use is server oriented as opposed to systemd-denotify which is aiming at desktops. You can get mail notifications on systemd service failures on a production machine.
 
+
+DEPENDS
+---------------------
+python2 systemd-python(or python-systemd on some distros)
+
 SOURCE DISTRIBUTION
 ---------------------
 
