@@ -189,9 +189,6 @@ class LogReader(threading.Thread):
                                     # no auth ?
                                     if  dictionary['auth'] == False:
                                         try:
-                                            s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'],certfile=dictionary['smtps_cert'])
-                                            s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                            s.quit()
                                             if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
                                                 s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
                                             else:
@@ -206,18 +203,7 @@ class LogReader(threading.Thread):
                                             s.quit()
                                     # auth
                                     elif dictionary['auth'] == True:
-                                        s = smtplib.SMTP_SSL(host=dictionary['smtps_host'], port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
-                                        s.login(dictionary['auth_user'], dictionary['auth_password'])
-                                        s.ehlo_or_helo_if_needed()
                                         try:
-                                            s.sendmail(msg['From'], msg['To'], msg.as_string())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-
                                             if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
                                                 s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
                                             else:
