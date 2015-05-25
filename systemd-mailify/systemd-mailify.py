@@ -35,11 +35,9 @@ class LogReader(threading.Thread):
 
         conf_dict = {}
         subject = conf.get("EMAIL", "subject")
-        #config_message = conf.get("EMAIL", "body")
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
         conf_dict['email_subject'] = subject
-        #conf_dict['email_message'] = config_message
         conf_dict['email_to'] = mail_to
         conf_dict['email_from'] = mail_from
 
@@ -62,12 +60,12 @@ class LogReader(threading.Thread):
         else:
             conf_dict['smtp'] = False
         smtp_host = conf.get("SMTP", "host")
-        #if smtp_host == "":
-        #    smtp_host = "localhost"
+        if len(smtp_host) == 0:
+            smtp_host = "localhost"
         conf_dict['smtp_host'] = smtp_host
         smtp_port = conf.getint("SMTP", "port")
-        #if not smtp_port or smtp_port is None:
-        #    smtp_port = 25
+        if len(smtp_port) == 0:
+            smtp_port = 25
         conf_dict['smtp_port'] = smtp_port
 
         #parse [SMTPS]
@@ -75,11 +73,11 @@ class LogReader(threading.Thread):
         if smtps and smtps == True:
             conf_dict['smtps'] = True
             smtps_host = conf.get("SMTPS", "host")
-            if not smtps_host:
+            if len(smtps_host) == 0:
                 smtps_host = "localhost"
             conf_dict['smtps_host'] = smtps_host
             smtps_port = conf.getint("SMTPS", "port")
-            if not smtps_port:
+            if len(smtps_port) == 0:
                 smtps_port = 465
             conf_dict['smtps_port'] = smtps_port
             smtps_cert = conf.get("SMTPS", "cert_file")
@@ -94,11 +92,11 @@ class LogReader(threading.Thread):
         if starttls and starttls == True:
             conf_dict['starttls'] = True
             starttls_host = conf.get("STARTTLS", "host")
-            if not starttls_host:
+            if len(starttls_host) == 0:
                 starttls_host = "localhost"
             conf_dict['starttls_host'] = starttls_host
             starttls_port = conf.getint("STARTTLS", "port")
-            if not starttls_port:
+            if len(starttls_port) == 0:
                 starttls_port = 465
             conf_dict['starttls_port'] = starttls_port
             starttls_cert = conf.get("STARTTLS", "cert_file")
@@ -194,16 +192,12 @@ class LogReader(threading.Thread):
                                     # no auth ?
                                     if  dictionary['auth'] == False:
                                         try:
-                                            s = smtplib.SMTP_SSL()
-                                            s.connect(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
-                                            s.ehlo()
-                                            if s.has_extn("STARTTLS"):
-                                                if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
-                                                    s.starttls(keyfile=dictionary['smtps_key'], certfile=dictionary['sptps_cert'])
-                                                else:
-                                                    s.starttls()
-                                                s.ehlo()
-                                                send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                                            if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
+                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                                            else:
+                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
+                                            s.ehlo_or_helo_if_needed()
+                                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
@@ -213,17 +207,13 @@ class LogReader(threading.Thread):
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
-                                            s = smtplib.SMTP_SSL()
-                                            s.connect(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
-                                            s.ehlo()
-                                            if s.has_extn("STARTTLS"):
-                                                if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
-                                                    s.starttls(keyfile=dictionary['smtps_key'], certfile=dictionary['sptps_cert'])
-                                                else:
-                                                    s.starttls()
-                                                s.ehlo()
-                                                s.login(dictionary['auth_user'], dictionary['auth_password'])
-                                                send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                                            if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
+                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                                            else:
+                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
+                                            s.ehlo_or_helo_if_needed()
+                                            s.login(dictionary['auth_user'], dictionary['auth_password'])
+                                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
