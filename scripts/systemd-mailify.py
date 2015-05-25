@@ -166,6 +166,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify-smtp-noauth: "+message)
                                         finally:
                                             s.quit()
+                                        del s
                                     # auth
                                     elif dictionary['auth'] == True:
                                         s = smtplib.SMTP()
@@ -179,6 +180,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify-smtp-auth: "+message)
                                         finally:
                                             s.quit()
+                                        del s
                                     else:
                                         pass
                                 #smtps
@@ -198,6 +200,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify-smtps-noauth: "+message)
                                         finally:
                                             s.quit()
+                                        del s
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
@@ -214,6 +217,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify-smtps-auth: "+message)
                                         finally:
                                             s.quit()
+                                        del s
                                     else:
                                         pass
                                 #starttls
@@ -238,6 +242,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify-starttls-noauth: "+message)
                                         finally:
                                             s.quit()
+                                        del s
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
@@ -259,6 +264,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify-starttls-auth: "+message)
                                         finally:
                                             s.quit()
+                                        del s
 
                                     else:
                                         pass
