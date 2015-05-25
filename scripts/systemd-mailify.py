@@ -158,7 +158,6 @@ class LogReader(threading.Thread):
                                     if dictionary['auth'] == False:
                                         s = smtplib.SMTP()
                                         s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
-                                        s.set_debuglevel(1)
                                         try:
                                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
@@ -171,10 +170,8 @@ class LogReader(threading.Thread):
                                     elif dictionary['auth'] == True:
                                         s = smtplib.SMTP()
                                         s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
-                                        s.set_debuglevel(1)
                                         s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
                                         try:
-                                         #   s.ehlo_or_helo_if_needed()
                                             s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
