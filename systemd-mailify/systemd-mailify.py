@@ -117,6 +117,10 @@ class LogReader(threading.Thread):
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
         dictionary = self.parse_config()
+        #for d in dictionary.iteritems():
+        #    print d
+        #print str(len(dictionary['starttls_cert']))
+        #print str(len(dictionary['starttls_key']))
         j_reader = journal.Reader()
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
@@ -190,12 +194,14 @@ class LogReader(threading.Thread):
                                     # no auth ?
                                     if  dictionary['auth'] == False:
                                         try:
-                                            s = smtplib.SMTP()
+                                            s = smtplib.SMTP_SSL()
                                             s.connect(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                                             s.ehlo()
                                             if s.has_extn("STARTTLS"):
-
-                                                s.starttls(keyfile=str(dictionary['smtps_key']), certfile=str(dictionary['smtps_cert']))
+                                                if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
+                                                    s.starttls(keyfile=dictionary['smtps_key'], certfile=dictionary['sptps_cert'])
+                                                else:
+                                                    s.starttls()
                                                 s.ehlo()
                                                 send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
@@ -207,14 +213,16 @@ class LogReader(threading.Thread):
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
-                                            s = smtplib.SMTP()
+                                            s = smtplib.SMTP_SSL()
                                             s.connect(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                                             s.ehlo()
                                             if s.has_extn("STARTTLS"):
-
-                                                s.starttls(keyfile=str(dictionary['smtps_key']), certfile=str(dictionary['smtps_cert']))
+                                                if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
+                                                    s.starttls(keyfile=dictionary['smtps_key'], certfile=dictionary['sptps_cert'])
+                                                else:
+                                                    s.starttls()
                                                 s.ehlo()
-                                                s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
+                                                s.login(dictionary['auth_user'], dictionary['auth_password'])
                                                 send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
@@ -233,8 +241,10 @@ class LogReader(threading.Thread):
                                             s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
                                             s.ehlo()
                                             if s.has_extn("STARTTLS"):
-
-                                                s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
+                                                if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
+                                                    s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
+                                                else:
+                                                    s.starttls()
                                                 s.ehlo()
                                                 send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
@@ -250,11 +260,12 @@ class LogReader(threading.Thread):
                                             s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
                                             s.ehlo()
                                             if s.has_extn("STARTTLS"):
-
-                                                #s.starttls(keyfile=str(dictionary['starttls_key']), certfile=str(dictionary['starttls_cert']))
-                                                s.starttls()
+                                                if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
+                                                    s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
+                                                else:
+                                                    s.starttls()
                                                 s.ehlo()
-                                                s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']).strip())
+                                                s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                                                 send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
