@@ -149,13 +149,13 @@ class LogReader(threading.Thread):
                                 stripped = string.strip()
                                 part1 = MIMEText(stripped, "plain")
                                 msg['Subject'] = dictionary['email_subject']
+                                #http://pymotw.com/2/smtplib/
                                 msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
-                                msg['From'] = email.utils.formataddr(('Author', dictionary['email_from']))
+                                msg['From'] = email.utils.formataddr((dictionary['email_from'], dictionary['email_from']))
                                 msg.attach(part1)
                                 if dictionary['smtp'] == True:
                                     # no auth
                                     if dictionary['auth'] == False:
-                                        #http://pymotw.com/2/smtplib/
                                         s = smtplib.SMTP()
                                         s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                                         s.set_debuglevel(1)
@@ -227,6 +227,7 @@ class LogReader(threading.Thread):
                                             s = smtplib.SMTP()
                                             s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
                                             s.ehlo()
+                                            #http://pymotw.com/2/smtplib/
                                             if s.has_extn("STARTTLS"):
                                                 if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
                                                     s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
@@ -245,6 +246,7 @@ class LogReader(threading.Thread):
                                         try:
                                             s = smtplib.SMTP()
                                             s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
+                                            #http://pymotw.com/2/smtplib/
                                             s.ehlo()
                                             if s.has_extn("STARTTLS"):
                                                 if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
