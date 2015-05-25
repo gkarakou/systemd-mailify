@@ -152,9 +152,6 @@ class LogReader(threading.Thread):
                                 msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
                                 msg['From'] = email.utils.formataddr(('Author', dictionary['email_from']))
                                 msg.attach(part1)
-                                print "...got pattern?..."
-                                #print msg.as_string().strip()
-                                #smtp
                                 if dictionary['smtp'] == True:
                                     # no auth
                                     if dictionary['auth'] == False:
