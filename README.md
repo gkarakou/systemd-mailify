@@ -24,7 +24,7 @@ git clone https://github.com/gkarakou/systemd-mailify.git
 
 cd systemd-mailify
 
-sudo python setup.py bdist_rpm --requires "python, systemd-python, systemd, systemd-libs " --build-requires="python-setuptools" --vendor="gkarakou@gmail.com" --post-install=postinstall.sh
+sudo python setup.py bdist_rpm --requires "python, systemd-python, systemd, systemd-libs " --build-requires="python-setuptools" --vendor="gkarakou@gmail.com"
 
 sudo yum --nogpgcheck localinstall dist/systemd-mailify-1.0-1.noarch.rpm
 
