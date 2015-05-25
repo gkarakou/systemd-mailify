@@ -64,7 +64,7 @@ class LogReader(threading.Thread):
             smtp_host = "localhost"
         conf_dict['smtp_host'] = smtp_host
         smtp_port = conf.getint("SMTP", "port")
-        if len(smtp_port) == 0:
+        if not smtp_port:
             smtp_port = 25
         conf_dict['smtp_port'] = smtp_port
 
@@ -77,7 +77,7 @@ class LogReader(threading.Thread):
                 smtps_host = "localhost"
             conf_dict['smtps_host'] = smtps_host
             smtps_port = conf.getint("SMTPS", "port")
-            if len(smtps_port) == 0:
+            if smtps_port:
                 smtps_port = 465
             conf_dict['smtps_port'] = smtps_port
             smtps_cert = conf.get("SMTPS", "cert_file")
@@ -96,8 +96,8 @@ class LogReader(threading.Thread):
                 starttls_host = "localhost"
             conf_dict['starttls_host'] = starttls_host
             starttls_port = conf.getint("STARTTLS", "port")
-            if len(starttls_port) == 0:
-                starttls_port = 465
+            if starttls_port:
+                starttls_port = 587
             conf_dict['starttls_port'] = starttls_port
             starttls_cert = conf.get("STARTTLS", "cert_file")
             conf_dict['starttls_cert'] = starttls_cert
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         message = template.format(type(ex).__name__, ex.args)
         journal.send("systemd-mailify: "+message)
     try:
-        config_logreader_start = config.getboolean("JOURNAL_READER", "start")
+        config_logreader_start = config.getboolean("SYSTEMD-MAILIFY", "start")
     except Exception as ex:
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
