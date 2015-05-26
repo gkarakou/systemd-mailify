@@ -163,7 +163,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify-smtp-noauth: "+message)
+                                            journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
                                         del s
@@ -177,7 +177,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify-smtp-auth: "+message)
+                                            journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
                                         del s
@@ -197,7 +197,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify-smtps-noauth: "+message)
+                                            journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
                                         del s
@@ -214,7 +214,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify-smtps-auth: "+message)
+                                            journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
                                         del s
@@ -239,7 +239,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify-starttls-noauth: "+message)
+                                            journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
                                         del s
@@ -261,7 +261,7 @@ class LogReader(threading.Thread):
                                         except Exception as ex:
                                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                                             message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify-starttls-auth: "+message)
+                                            journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
                                         del s
@@ -310,5 +310,5 @@ if __name__ == "__main__":
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
         lg = LogReader()
-        #lg.daemon = True
+        lg.daemon = True
         lg.run()
