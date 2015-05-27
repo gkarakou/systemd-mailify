@@ -62,3 +62,12 @@ If you find any troubles you can follow this guide:
 http://shallowsky.com/blog/programming/python-debian-packages-w-stdeb.html
 
 
+USAGE
+--------------------
+You simply edit the file /etc/systemd-mailify.conf and enable/start systemd-mailify.
+
+<pre>
+sudo systemctl enable systemd-mailify
+sudo systemctl start systemd-mailify
+</pre>
+
