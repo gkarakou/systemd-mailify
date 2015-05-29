@@ -9,6 +9,7 @@ from threading import Thread
 import ConfigParser
 import smtplib
 import email.utils
+import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -312,3 +313,11 @@ if __name__ == "__main__":
         lg = LogReader()
         lg.daemon = True
         lg.run()
+        pid = os.getpid()
+        try:
+            with open('/run/systemd-mailify.pid', 'w') as of:
+                of.write(str(pid))
+        except Exception as ex:
+            templated = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messaged = templated.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: "+messaged)
