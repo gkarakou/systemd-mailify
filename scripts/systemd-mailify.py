@@ -312,7 +312,6 @@ if __name__ == "__main__":
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
         lg = LogReader()
         lg.daemon = True
-        lg.run()
         pid = os.getpid()
         try:
             with open('/run/systemd-mailify.pid', 'w') as of:
@@ -321,3 +320,4 @@ if __name__ == "__main__":
             templated = "An exception of type {0} occured. Arguments:\n{1!r}"
             messaged = templated.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messaged)
+        lg.run()
