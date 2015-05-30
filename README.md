@@ -2,9 +2,16 @@
 
 GENERAL
 -------------------
-systemd-mailify is a slightly modified stripped down version of systemd-denotify with a minimum set of dependencies. Its use is server oriented as opposed to systemd-denotify which is aiming at desktops. You can get mail notifications on systemd service failures on a production machine.
+systemd-mailify is a slightly modified, stripped down version of its counterpart systemd-denotify with a minimum set of dependencies. Its use is server oriented as opposed to systemd-denotify which is aiming at desktops. You can get mail notifications on systemd service failures on a production machine.
+systemd-mailify is not to be confused with the systemd family of daemons; Its a standalone python program which took half of its name to honour its dependency python-systemd. It has a memory footprint of around 7 mb on idle state(just polling the systemd journal for events). You do the math if you can dedicate that amount of ram to it.
 
-Note: systemd-mailify is not extensively tested at this point and should be considered an RC rather production ready.
+Note: systemd-mailify is not thoroughly tested on live environments. You should provide feedback if you can but it worked without problems on ssl enabled mail servers(I tested it with google's smtp and my own smtp without ssl/tls). An selinux policy module will also be available later for redhat based distros.
+
+
+WHY SHOULD I INSTALL IT
+-------------------------
+Lets say you have to administer a lot of vps's simply install systemd-mailify on them and you will notice a failure from your phone email client instead of having to login to each one of them.
+
 
 DEPENDS
 ---------------------
