@@ -6,7 +6,7 @@
  BindsTo=systemd-journald.service
 [Service]
  Type=simple
- PIDFile=/run/systemd-mailify.pid
+ PIDFile=/var/run/systemd-mailify.pid
  ExecStart=/usr/bin/systemd-mailify.py
  ExecStop=/bin/killall /usr/bin/systemd-mailify.py
 [Install]

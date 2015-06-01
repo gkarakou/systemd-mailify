@@ -314,7 +314,7 @@ if __name__ == "__main__":
         lg.daemon = True
         pid = os.getpid()
         try:
-            with open('/run/systemd-mailify.pid', 'w') as of:
+            with open('/var/run/systemd-mailify.pid', 'w') as of:
                 of.write(str(pid))
         except Exception as ex:
             templated = "An exception of type {0} occured. Arguments:\n{1!r}"
