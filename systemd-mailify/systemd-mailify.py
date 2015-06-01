@@ -167,7 +167,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
-                                        del s
+                                            del s
                                     # auth
                                     elif dictionary['auth'] == True:
                                         s = smtplib.SMTP()
@@ -181,7 +181,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
-                                        del s
+                                            del s
                                     else:
                                         pass
                                 #smtps
@@ -201,7 +201,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
-                                        del s
+                                            del s
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
@@ -218,7 +218,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
-                                        del s
+                                            del s
                                     else:
                                         pass
                                 #starttls
@@ -243,7 +243,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
-                                        del s
+                                            del s
                                     # auth
                                     elif dictionary['auth'] == True:
                                         try:
@@ -265,7 +265,7 @@ class LogReader(threading.Thread):
                                             journal.send("systemd-mailify: "+message)
                                         finally:
                                             s.quit()
-                                        del s
+                                            del s
 
                                     else:
                                         pass
