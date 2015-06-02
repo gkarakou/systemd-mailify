@@ -2,12 +2,14 @@
  Description=systemd-mailify Service
  ConditionFileNotEmpty=/etc/systemd-mailify.conf
  DefaultDependencies=no
- After=systemd-journald.service
+ Requires=systemd-journald.service network.target
+ After=systemd-journald.service network.target
  BindsTo=systemd-journald.service
 [Service]
  Type=simple
  PIDFile=/var/run/systemd-mailify.pid
  ExecStart=/usr/bin/systemd-mailify.py
  ExecStop=/bin/killall /usr/bin/systemd-mailify.py
+ Restart=always
 [Install]
  WantedBy=multi-user.target
