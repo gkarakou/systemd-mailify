@@ -1,19 +1,20 @@
 #!/usr/bin/python2
 #encoding=utf-8
-import threading
-import time
 import datetime
 import select
 from systemd import journal
-from threading import Thread
+import multiprocessing
+from multiprocessing import Process,Queue
 import ConfigParser
 import smtplib
 import email.utils
 import os
+from pwd import getpwnam
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-class LogReader(threading.Thread):
+class LogReader(multiprocessing.Process):
     """
     LogReader
     :desc: Class that notifies the user for failed systemd services
@@ -21,12 +22,40 @@ class LogReader(threading.Thread):
     Has an constructor that calls the parent one, a run method and a destructor
     """
 
-    def __init__(self):
+    def get_euid(self):
         """
-        __init__
-        return parent constructor
+        get_euid_
+        :desc : Function that returns effective user id as int
+        return int
         """
-        Thread.__init__(self)
+        uid = os.geteuid()
+        pid = os.getpid()
+        print "getting uid: "+ str(uid)
+        print "getting pid: "+ str(pid)
+        journal.send("systemd-mailify in get_euid: "+str(uid))
+        journal.send("systemd-mailify pid in get_euid: "+str(pid))
+        return uid
+
+    def get_user(self, name):
+        """
+        get_user
+        :desc : Function that returns user id as int from config
+        return int
+        """
+        username_to_id = getpwnam(name).pw_uid
+        journal.send("systemd-mailify in get_user: "+str(username_to_id) )
+        print "getting uid: "+ str(username_to_id)
+        return username_to_id
+
+    def set_euid(self, uid):
+        """set_euid
+        return int
+        :param *args:
+        """
+        euid = int(uid)
+        setuid = os.seteuid(euid)
+        if setuid == None:
+            journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
 
     def parse_config(self):
         conf = ConfigParser.RawConfigParser()
@@ -35,9 +64,11 @@ class LogReader(threading.Thread):
         #parse [EMAIL]
 
         conf_dict = {}
+        user = conf.get("SYSTEMD-MAILIFY", "user")
         subject = conf.get("EMAIL", "subject")
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
+        conf_dict['user'] = user
         conf_dict['email_subject'] = subject
         conf_dict['email_to'] = mail_to
         conf_dict['email_from'] = mail_from
@@ -115,7 +146,11 @@ class LogReader(threading.Thread):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
+        print 'In %s' % self.name
         dictionary = self.parse_config()
+        username = dictionary["user"]
+        uid = self.get_user(username)
+        self.set_euid(uid)
         #for d in dictionary.iteritems():
         #    print d
         #print str(len(dictionary['starttls_cert']))
@@ -322,3 +357,4 @@ if __name__ == "__main__":
             journal.send("systemd-mailify: "+messaged)
         finally:
             lg.run()
+            lg.start()

@@ -43,7 +43,7 @@ class LogReader(multiprocessing.Process):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
-        journal.send("systemd-mailify in get_user: "+str(username_to_id) )
+        journal.send("systemd-mailify in get_user: "+str(username_to_id))
         print "getting uid: "+ str(username_to_id)
         return username_to_id
 
@@ -150,7 +150,7 @@ class LogReader(multiprocessing.Process):
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_user(username)
-        self.set_euid(uid)
+        #self.set_euid(uid)
         #for d in dictionary.iteritems():
         #    print d
         #print str(len(dictionary['starttls_cert']))
