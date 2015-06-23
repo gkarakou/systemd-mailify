@@ -5,7 +5,6 @@ import select
 from systemd import journal
 import multiprocessing
 from Queue import Queue
-from multiprocessing import Process
 from threading import Thread
 import ConfigParser
 import smtplib
@@ -33,10 +32,10 @@ class LogReader(multiprocessing.Process):
         """
         uid = os.geteuid()
         pid = os.getpid()
-        print "getting uid: "+ str(uid)
-        print "getting pid: "+ str(pid)
-        journal.send("systemd-mailify in get_euid: "+str(uid))
-        journal.send("systemd-mailify pid in get_euid: "+str(pid))
+        #print "getting uid: "+ str(uid)
+        #print "getting pid: "+ str(pid)
+        #journal.send("systemd-mailify in get_euid: "+str(uid))
+        #journal.send("systemd-mailify pid in get_euid: "+str(pid))
         return uid
 
     def get_user(self, name):
@@ -46,8 +45,8 @@ class LogReader(multiprocessing.Process):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
-        journal.send("systemd-mailify in get_user: "+str(username_to_id))
-        print "getting uid: "+ str(username_to_id)
+        #journal.send("systemd-mailify in get_user: "+str(username_to_id))
+        #print "getting uid: "+ str(username_to_id)
         return username_to_id
 
     def set_euid(self, uid):
@@ -57,8 +56,8 @@ class LogReader(multiprocessing.Process):
         """
         euid = int(uid)
         setuid = os.seteuid(euid)
-        if setuid == None:
-            journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
+        #if setuid == None:
+        #    journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
 
     def parse_config(self):
         conf = ConfigParser.RawConfigParser()
@@ -145,11 +144,8 @@ class LogReader(multiprocessing.Process):
 
     def mail_worker(self, stri, que):
 
-        print 'In %s' % self.name
+        #print 'In %s' % self.name
         dictionary = self.parse_config()
-        username = dictionary["user"]
-        uid = self.get_user(username)
-        self.set_euid(uid)
         msg = MIMEMultipart("alternative")
         #get it from the queue?
         stripped = stri.strip()
@@ -166,7 +162,7 @@ class LogReader(multiprocessing.Process):
                 s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                    if send:
+                    if isinstance(send, dict):
                         que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                     else:
                         que.put([self.name, datetime.datetime.now(), "FAILURE"])
@@ -185,6 +181,10 @@ class LogReader(multiprocessing.Process):
                 s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
+                    if isinstance(send, dict):
+                        que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    else:
+                        que.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -192,10 +192,6 @@ class LogReader(multiprocessing.Process):
                 finally:
                      s.quit()
                      del s
-                if send:
-                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
-                else:
-                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             else:
                 pass
         #smtps
@@ -205,10 +201,20 @@ class LogReader(multiprocessing.Process):
                 try:
                     if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                        s.ehlo_or_helo_if_needed()
+                        send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -216,27 +222,25 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
-                if send:
-                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
-                else:
-                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
+                    #check whether it is a real file and pem encoded
                     if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                        s.ehlo_or_helo_if_needed()
+                        s.login(dictionary['auth_user'], dictionary['auth_password'])
+                        send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                        print str(type(send))
-                        journal.send("systemd-mailify type of send: "+str(type(send)))
                         if isinstance(send, dict):
-                            for i in send:
-                                print i
-                                print send[i]
-                                journal.send("systemd-mailify type of send: "+str(i)+ str(send[i]))
                             que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                         else:
                             que.put([self.name, datetime.datetime.now(), "FAILURE"])
@@ -259,12 +263,23 @@ class LogReader(multiprocessing.Process):
                     s.ehlo()
                     #http://pymotw.com/2/smtplib/
                     if s.has_extn("STARTTLS"):
+                        #check whether it is a real file and pem encoded
                         if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
                             s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
+                            s.ehlo()
+                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -272,10 +287,6 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
-                if send:
-                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
-                else:
-                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -284,13 +295,25 @@ class LogReader(multiprocessing.Process):
                     #http://pymotw.com/2/smtplib/
                     s.ehlo()
                     if s.has_extn("STARTTLS"):
+                        #check whether it is a real file and pem encoded
                         if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
                             s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
+                            s.ehlo()
+                            s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
+                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -298,10 +321,6 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
-                if send:
-                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
-                else:
-                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
 
             else:
                 pass
@@ -313,6 +332,10 @@ class LogReader(multiprocessing.Process):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
+        dictionary = self.parse_config()
+        username = dictionary["user"]
+        uid = self.get_user(username)
+        self.set_euid(uid)
         queue = Queue()
         j_reader = journal.Reader()
         j_reader.log_level(journal.LOG_INFO)
@@ -346,9 +369,11 @@ class LogReader(multiprocessing.Process):
                                 worker.join()
                                 q_list = queue.get()
                                 if q_list[2] == "SUCCESS":
-                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "+str(q_list[1])+" delivered mail with content " + string)
+                                    journal.send("systemd-mailify:"+str(q_list[0])+
+                                            " at "+str(q_list[1])+" delivered mail with content: " + string)
                                 elif q_list[2] == "FAILURE":
-                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "+str(q_list[1])+" failed to deliver mail with content " + string)
+                                    journal.send("systemd-mailify:"+str(q_list[0])+
+                                            " at "+str(q_list[1])+" failed to deliver mail with content: " + string)
                                 else :
                                     journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
 
