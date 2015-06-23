@@ -174,9 +174,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
 
             # auth
             elif dictionary['auth'] == True:
@@ -193,9 +193,9 @@ class LogReader(multiprocessing.Process):
                      s.quit()
                      del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
             else:
                 pass
         #smtps
@@ -217,9 +217,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -238,9 +238,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
             else:
                 pass
         #starttls
@@ -267,9 +267,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -293,9 +293,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
 
             else:
                 pass
