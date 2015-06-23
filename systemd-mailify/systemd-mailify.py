@@ -23,8 +23,9 @@ class LogReader(Process):
     Has an constructor that calls the parent one, a run method and a destructor
     """
     def __init__(self, queue):
-        super(Processor, self).__init__()
+        super(LogReader, self).__init__()
         self.queue = queue
+
     def get_euid(self):
         """
         get_euid_
