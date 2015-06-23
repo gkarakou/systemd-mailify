@@ -1,10 +1,9 @@
 #!/usr/bin/python2
 #encoding=utf-8
-import threading
-import time
 import datetime
 import select
 from systemd import journal
+import multiprocessing
 from multiprocessing import Process,Queue
 import ConfigParser
 import smtplib
@@ -15,16 +14,13 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-class LogReader(Process):
+class LogReader(multiprocessing.Process):
     """
     LogReader
     :desc: Class that notifies the user for failed systemd services
     Extends threading.Thread
     Has an constructor that calls the parent one, a run method and a destructor
     """
-    def __init__(self, queue):
-        super(LogReader, self).__init__()
-        self.queue = queue
 
     def get_euid(self):
         """
@@ -345,8 +341,7 @@ if __name__ == "__main__":
         journal.send("systemd-mailify: "+message)
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
-        q = Queue()
-        lg = LogReader(q)
+        lg = LogReader()
         lg.daemon = True
         pid = os.getpid()
         try:
@@ -357,5 +352,5 @@ if __name__ == "__main__":
             messaged = templated.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messaged)
         finally:
-            lg.run()
+            #lg.run()
             lg.start()
