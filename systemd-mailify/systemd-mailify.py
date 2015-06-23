@@ -4,7 +4,9 @@ import datetime
 import select
 from systemd import journal
 import multiprocessing
-from multiprocessing import Process,Queue
+from Queue import Queue
+from multiprocessing import Process
+from threading import Thread
 import ConfigParser
 import smtplib
 import email.utils
@@ -141,7 +143,7 @@ class LogReader(multiprocessing.Process):
         return conf_dict
 
 
-    def mail_worker(self, string):
+    def mail_worker(self, string, queue):
 
         print 'In %s' % self.name
         dictionary = self.parse_config()
@@ -171,13 +173,18 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
+                if send:
+                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                else:
+                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
+
             # auth
             elif dictionary['auth'] == True:
                 s = smtplib.SMTP()
                 s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                 s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
                 try:
-                    s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
+                    send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -185,6 +192,10 @@ class LogReader(multiprocessing.Process):
                 finally:
                      s.quit()
                      del s
+                if send:
+                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                else:
+                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
             else:
                 pass
         #smtps
@@ -205,6 +216,10 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
+                if send:
+                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                else:
+                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -222,6 +237,10 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
+                if send:
+                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                else:
+                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
             else:
                 pass
         #starttls
@@ -247,6 +266,10 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
+                if send:
+                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                else:
+                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -269,10 +292,13 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
+                if send:
+                    queue.put([self.name, datetime.datetime.now, "SUCCESS"])
+                else:
+                    queue.put([self.name, datetime.datetime.now, "FAILURE"])
 
             else:
                 pass
-
 
     def run(self):
         """
@@ -281,6 +307,7 @@ class LogReader(multiprocessing.Process):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
+        queue = Queue()
         j_reader = journal.Reader()
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
@@ -308,8 +335,17 @@ class LogReader(multiprocessing.Process):
                             if string and pattern in string:
                                 #queue.put(string)
                                 #http://pymotw.com/2/smtplib/
-                            #back to normal journal reading
-                                self.mail_worker(string)
+                                worker = Thread(target=self.mail_worker,
+                                        args=(string, queue))
+                                worker.start()
+                                worker.join()
+                                q_list = queue.get()
+                                if q_list[2] == "SUCCESS":
+                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "
+                                            +str(q_list[1])+" delivered mail with content " + string)
+                                else:
+                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "
+                                            +str(q_list[1])+" failed ot deliver mail with content " + string)
 
                             else:
                                 continue
@@ -319,6 +355,7 @@ class LogReader(multiprocessing.Process):
                             journal.send("systemd-mailify: "+message)
                     else:
                         continue
+           #back to normal journal reading
             else:
                 pass
             continue
