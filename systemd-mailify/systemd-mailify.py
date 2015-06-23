@@ -230,7 +230,9 @@ class LogReader(multiprocessing.Process):
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                        if send:
+                        if isinstance(send) == dict:
+                            for i in send.iteritems():
+                                print i
                             que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                         else:
                             que.put([self.name, datetime.datetime.now(), "FAILURE"])
