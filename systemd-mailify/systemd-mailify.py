@@ -232,10 +232,11 @@ class LogReader(multiprocessing.Process):
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         print str(type(send))
                         journal.send("systemd-mailify type of send: "+str(type(send)))
-                        if isinstance(send) == dict:
+                        if isinstance(send, dict):
                             for i in send:
                                 print i
-                                print send(i)
+                                print send[i]
+                                journal.send("systemd-mailify type of send: "+str(i)+ str(send[i]))
                             que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                         else:
                             que.put([self.name, datetime.datetime.now(), "FAILURE"])
