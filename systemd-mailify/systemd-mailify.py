@@ -32,7 +32,8 @@ class LogReader(multiprocessing.Process):
         pid = os.getpid()
         print "getting uid: "+ str(uid)
         print "getting pid: "+ str(pid)
-        journal.send("systemd-mailify in get_euid: "+str(uid) )
+        journal.send("systemd-mailify in get_euid: "+str(uid))
+        journal.send("systemd-mailify pid in get_euid: "+str(pid))
         return uid
 
     def get_user(self, name):
