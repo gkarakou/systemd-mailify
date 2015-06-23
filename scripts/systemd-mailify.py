@@ -4,7 +4,8 @@ import datetime
 import select
 from systemd import journal
 import multiprocessing
-from multiprocessing import Process,Queue
+from Queue import Queue
+from threading import Thread
 import ConfigParser
 import smtplib
 import email.utils
@@ -17,9 +18,10 @@ from email.mime.text import MIMEText
 class LogReader(multiprocessing.Process):
     """
     LogReader
-    :desc: Class that notifies the user for failed systemd services
-    Extends threading.Thread
-    Has an constructor that calls the parent one, a run method and a destructor
+    :desc: Class that mails a user for failed systemd services
+    Extends multiprocessing.Process
+    Implements a mail worker that is spawned to mail failed services. A queue
+    is used for notifying the parent process about which tasks were sucessful
     """
 
     def get_euid(self):
@@ -30,10 +32,10 @@ class LogReader(multiprocessing.Process):
         """
         uid = os.geteuid()
         pid = os.getpid()
-        print "getting uid: "+ str(uid)
-        print "getting pid: "+ str(pid)
-        journal.send("systemd-mailify in get_euid: "+str(uid))
-        journal.send("systemd-mailify pid in get_euid: "+str(pid))
+        #print "getting uid: "+ str(uid)
+        #print "getting pid: "+ str(pid)
+        #journal.send("systemd-mailify in get_euid: "+str(uid))
+        #journal.send("systemd-mailify pid in get_euid: "+str(pid))
         return uid
 
     def get_user(self, name):
@@ -43,8 +45,8 @@ class LogReader(multiprocessing.Process):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
-        journal.send("systemd-mailify in get_user: "+str(username_to_id) )
-        print "getting uid: "+ str(username_to_id)
+        #journal.send("systemd-mailify in get_user: "+str(username_to_id))
+        #print "getting uid: "+ str(username_to_id)
         return username_to_id
 
     def set_euid(self, uid):
@@ -54,8 +56,8 @@ class LogReader(multiprocessing.Process):
         """
         euid = int(uid)
         setuid = os.seteuid(euid)
-        if setuid == None:
-            journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
+        #if setuid == None:
+        #    journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
 
     def parse_config(self):
         conf = ConfigParser.RawConfigParser()
@@ -139,6 +141,190 @@ class LogReader(multiprocessing.Process):
             conf_dict['starttls'] = False
         return conf_dict
 
+
+    def mail_worker(self, stri, que):
+
+        #print 'In %s' % self.name
+        dictionary = self.parse_config()
+        msg = MIMEMultipart("alternative")
+        #get it from the queue?
+        stripped = stri.strip()
+        part1 = MIMEText(stripped, "plain")
+        msg['Subject'] = dictionary['email_subject']
+        #http://pymotw.com/2/smtplib/
+        msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
+        msg['From'] = email.utils.formataddr((dictionary['email_from'], dictionary['email_from']))
+        msg.attach(part1)
+        if dictionary['smtp'] == True:
+            # no auth
+            if dictionary['auth'] == False:
+                s = smtplib.SMTP()
+                s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
+                try:
+                    send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                    if isinstance(send, dict):
+                        que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    else:
+                        que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+message)
+                finally:
+                    s.quit()
+                    del s
+
+            # auth
+            elif dictionary['auth'] == True:
+                s = smtplib.SMTP()
+                s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
+                s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
+                try:
+                    send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
+                    if isinstance(send, dict):
+                        que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    else:
+                        que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+message)
+                finally:
+                     s.quit()
+                     del s
+            else:
+                pass
+        #smtps
+        if dictionary['smtps'] == True:
+            # no auth ?
+            if  dictionary['auth'] == False:
+                try:
+                    if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
+                        s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                        s.ehlo_or_helo_if_needed()
+                        send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    else:
+                        s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
+                        s.ehlo_or_helo_if_needed()
+                        send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+message)
+                finally:
+                    s.quit()
+                    del s
+            # auth
+            elif dictionary['auth'] == True:
+                try:
+                    #check whether it is a real file and pem encoded
+                    if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
+                        s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
+                        s.ehlo_or_helo_if_needed()
+                        s.login(dictionary['auth_user'], dictionary['auth_password'])
+                        send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    else:
+                        s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
+                        s.ehlo_or_helo_if_needed()
+                        s.login(dictionary['auth_user'], dictionary['auth_password'])
+                        send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if isinstance(send, dict):
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+message)
+                finally:
+                    s.quit()
+                    del s
+            else:
+                pass
+        #starttls
+        if dictionary['starttls'] == True:
+            # no auth
+            if dictionary['auth'] == False:
+                try:
+                    s = smtplib.SMTP()
+                    s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
+                    s.ehlo()
+                    #http://pymotw.com/2/smtplib/
+                    if s.has_extn("STARTTLS"):
+                        #check whether it is a real file and pem encoded
+                        if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
+                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
+                            s.ehlo()
+                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                        else:
+                            s.starttls()
+                            s.ehlo()
+                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+message)
+                finally:
+                    s.quit()
+                    del s
+            # auth
+            elif dictionary['auth'] == True:
+                try:
+                    s = smtplib.SMTP()
+                    s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
+                    #http://pymotw.com/2/smtplib/
+                    s.ehlo()
+                    if s.has_extn("STARTTLS"):
+                        #check whether it is a real file and pem encoded
+                        if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
+                            s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
+                            s.ehlo()
+                            s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
+                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                        else:
+                            s.starttls()
+                            s.ehlo()
+                            s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
+                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                            if isinstance(send, dict):
+                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            else:
+                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+message)
+                finally:
+                    s.quit()
+                    del s
+
+            else:
+                pass
+
     def run(self):
         """
         run
@@ -146,15 +332,11 @@ class LogReader(multiprocessing.Process):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
-        print 'In %s' % self.name
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_user(username)
         self.set_euid(uid)
-        #for d in dictionary.iteritems():
-        #    print d
-        #print str(len(dictionary['starttls_cert']))
-        #print str(len(dictionary['starttls_key']))
+        queue = Queue()
         j_reader = journal.Reader()
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
@@ -180,131 +362,21 @@ class LogReader(multiprocessing.Process):
                         try:
                             string = entry['MESSAGE']
                             if string and pattern in string:
+                                #queue.put(string)
                                 #http://pymotw.com/2/smtplib/
-                                msg = MIMEMultipart("alternative")
-                                stripped = string.strip()
-                                part1 = MIMEText(stripped, "plain")
-                                msg['Subject'] = dictionary['email_subject']
-                                #http://pymotw.com/2/smtplib/
-                                msg['To'] = email.utils.formataddr(('Recipient', dictionary['email_to']))
-                                msg['From'] = email.utils.formataddr((dictionary['email_from'], dictionary['email_from']))
-                                msg.attach(part1)
-                                if dictionary['smtp'] == True:
-                                    # no auth
-                                    if dictionary['auth'] == False:
-                                        s = smtplib.SMTP()
-                                        s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
-                                        try:
-                                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-                                            del s
-                                    # auth
-                                    elif dictionary['auth'] == True:
-                                        s = smtplib.SMTP()
-                                        s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
-                                        s.login(str(dictionary['auth_user']), str(dictionary['auth_password']))
-                                        try:
-                                            s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-                                            del s
-                                    else:
-                                        pass
-                                #smtps
-                                if dictionary['smtps'] == True:
-                                    # no auth ?
-                                    if  dictionary['auth'] == False:
-                                        try:
-                                            if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
-                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
-                                            else:
-                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
-                                            s.ehlo_or_helo_if_needed()
-                                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-                                            del s
-                                    # auth
-                                    elif dictionary['auth'] == True:
-                                        try:
-                                            if len(dictionary['smtps_cert']) >0 and len(dictionary['smtps_key'])>0:
-                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'], keyfile=dictionary['smtps_key'], certfile=dictionary['smtps_cert'])
-                                            else:
-                                                s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
-                                            s.ehlo_or_helo_if_needed()
-                                            s.login(dictionary['auth_user'], dictionary['auth_password'])
-                                            send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-                                            del s
-                                    else:
-                                        pass
-                                #starttls
-                                if dictionary['starttls'] == True:
-                                    # no auth
-                                    if dictionary['auth'] == False:
-                                        try:
-                                            s = smtplib.SMTP()
-                                            s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
-                                            s.ehlo()
-                                            #http://pymotw.com/2/smtplib/
-                                            if s.has_extn("STARTTLS"):
-                                                if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
-                                                    s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
-                                                else:
-                                                    s.starttls()
-                                                s.ehlo()
-                                                send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-                                            del s
-                                    # auth
-                                    elif dictionary['auth'] == True:
-                                        try:
-                                            s = smtplib.SMTP()
-                                            s.connect(host=str(dictionary['starttls_host']), port=dictionary['starttls_port'])
-                                            #http://pymotw.com/2/smtplib/
-                                            s.ehlo()
-                                            if s.has_extn("STARTTLS"):
-                                                if len(dictionary['starttls_cert']) >0 and len(dictionary['starttls_key'])>0:
-                                                    s.starttls(keyfile=dictionary['starttls_key'], certfile=dictionary['starttls_cert'])
-                                                else:
-                                                    s.starttls()
-                                                s.ehlo()
-                                                s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
-                                                send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
-                                        except Exception as ex:
-                                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                                            message = template.format(type(ex).__name__, ex.args)
-                                            journal.send("systemd-mailify: "+message)
-                                        finally:
-                                            s.quit()
-                                            del s
+                                worker = Thread(target=self.mail_worker, args=(string, queue))
+                                worker.start()
+                                worker.join()
+                                q_list = queue.get()
+                                if q_list[2] == "SUCCESS":
+                                    journal.send("systemd-mailify:"+str(q_list[0])+
+                                            " at "+str(q_list[1])+" delivered mail with content: " + string)
+                                elif q_list[2] == "FAILURE":
+                                    journal.send("systemd-mailify:"+str(q_list[0])+
+                                            " at "+str(q_list[1])+" failed to deliver mail with content: " + string)
+                                else :
+                                    journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
 
-                                    else:
-                                        pass
-                            #back to normal journal reading
                             else:
                                 continue
                         except Exception as ex:
@@ -313,6 +385,7 @@ class LogReader(multiprocessing.Process):
                             journal.send("systemd-mailify: "+message)
                     else:
                         continue
+           #back to normal journal reading
             else:
                 pass
             continue
