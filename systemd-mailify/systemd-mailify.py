@@ -29,7 +29,9 @@ class LogReader(multiprocessing.Process):
         return int
         """
         uid = os.geteuid()
+        pid = os.getpid()
         print "getting uid: "+ str(uid)
+        print "getting pid: "+ str(pid)
         journal.send("systemd-mailify in get_euid: "+str(uid) )
         return uid
 
@@ -143,6 +145,7 @@ class LogReader(multiprocessing.Process):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
+        print 'In %s' % self.name
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_user(username)
