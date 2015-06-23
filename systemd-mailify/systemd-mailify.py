@@ -143,7 +143,7 @@ class LogReader(multiprocessing.Process):
         return conf_dict
 
 
-    def mail_worker(self, string, queue):
+    def mail_worker(self, stri, que):
 
         print 'In %s' % self.name
         dictionary = self.parse_config()
@@ -152,7 +152,7 @@ class LogReader(multiprocessing.Process):
         self.set_euid(uid)
         msg = MIMEMultipart("alternative")
         #get it from the queue?
-        stripped = string.strip()
+        stripped = stri.strip()
         part1 = MIMEText(stripped, "plain")
         msg['Subject'] = dictionary['email_subject']
         #http://pymotw.com/2/smtplib/
@@ -167,9 +167,9 @@ class LogReader(multiprocessing.Process):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                     if send:
-                        queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                     else:
-                        queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                        que.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -178,9 +178,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
 
             # auth
             elif dictionary['auth'] == True:
@@ -197,9 +197,9 @@ class LogReader(multiprocessing.Process):
                      s.quit()
                      del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             else:
                 pass
         #smtps
@@ -221,9 +221,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -242,9 +242,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             else:
                 pass
         #starttls
@@ -271,9 +271,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             # auth
             elif dictionary['auth'] == True:
                 try:
@@ -297,9 +297,9 @@ class LogReader(multiprocessing.Process):
                     s.quit()
                     del s
                 if send:
-                    queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
                 else:
-                    queue.put([self.name, datetime.datetime.now(), "FAILURE"])
+                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
 
             else:
                 pass
@@ -344,11 +344,11 @@ class LogReader(multiprocessing.Process):
                                 worker.join()
                                 q_list = queue.get()
                                 if q_list[2] == "SUCCESS":
-                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "
-                                            +str(q_list[1])+" delivered mail with content " + string)
-                                else:
-                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "
-                                            +str(q_list[1])+" failed to deliver mail with content " + string)
+                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "+str(q_list[1])+" delivered mail with content " + string)
+                                elif q_list[2] == "FAILURE":
+                                    journal.send("systemd-mailify:"+str(q_list[0])+ " at "+str(q_list[1])+" failed to deliver mail with content " + string)
+                                else :
+                                    journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
 
                             else:
                                 continue
