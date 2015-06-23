@@ -150,7 +150,7 @@ class LogReader(multiprocessing.Process):
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_user(username)
-        #self.set_euid(uid)
+        self.set_euid(uid)
         #for d in dictionary.iteritems():
         #    print d
         #print str(len(dictionary['starttls_cert']))
