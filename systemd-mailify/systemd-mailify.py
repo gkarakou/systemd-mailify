@@ -10,6 +10,8 @@ import ConfigParser
 import smtplib
 import email.utils
 import os
+from pwd import getpwnam
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -27,6 +29,37 @@ class LogReader(threading.Thread):
         return parent constructor
         """
         Thread.__init__(self)
+
+    def get_euid(self):
+        """
+        get_euid_
+        :desc : Function that returns effective user id as int
+        return int
+        """
+        uid = os.geteuid()
+ #       print("getting uid: "+ str(uid))
+        return uid
+
+    def user_to_uid(self, name):
+        """
+        getuid_
+        :desc : Function that returns user id as int from config
+        return int
+        """
+        username_to_id = getpwnam(name).pw_uid
+ #       print("getting uid: "+ str(uid))
+        return username_to_id
+
+    def set_euid(self, uid):
+        """set_euid
+        return int
+        :param *args:
+        """
+        euid = int(uid)
+        setuid = os.seteuid(euid)
+        if setuid == None:
+            pass
+           # print("setting uid: "+ str(self.get_euid()))
 
     def parse_config(self):
         conf = ConfigParser.RawConfigParser()
