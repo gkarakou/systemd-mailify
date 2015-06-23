@@ -33,7 +33,8 @@ class LogReader(Process):
         return int
         """
         uid = os.geteuid()
- #       print("getting uid: "+ str(uid))
+        print "getting uid: "+ str(uid)
+        journal.send("systemd-mailify in get_euid: "+str(uid) )
         return uid
 
     def get_user(self, name):
@@ -43,7 +44,8 @@ class LogReader(Process):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
- #       print("getting uid: "+ str(uid))
+        journal.send("systemd-mailify in get_user: "+str(username_to_id) )
+        print "getting uid: "+ str(username_to_id)
         return username_to_id
 
     def set_euid(self, uid):
@@ -54,8 +56,7 @@ class LogReader(Process):
         euid = int(uid)
         setuid = os.seteuid(euid)
         if setuid == None:
-            pass
-           # print("setting uid: "+ str(self.get_euid()))
+            journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
 
     def parse_config(self):
         conf = ConfigParser.RawConfigParser()
