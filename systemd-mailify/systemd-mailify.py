@@ -166,6 +166,10 @@ class LogReader(multiprocessing.Process):
                 s.connect(host=str(dictionary['smtp_host']), port=dictionary['smtp_port'])
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                    if send:
+                        queue.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                    else:
+                        queue.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -335,8 +339,7 @@ class LogReader(multiprocessing.Process):
                             if string and pattern in string:
                                 #queue.put(string)
                                 #http://pymotw.com/2/smtplib/
-                                worker = Thread(target=self.mail_worker,
-                                        args=(string, queue))
+                                worker = Thread(target=self.mail_worker, args=(string, queue))
                                 worker.start()
                                 worker.join()
                                 q_list = queue.get()
@@ -345,7 +348,7 @@ class LogReader(multiprocessing.Process):
                                             +str(q_list[1])+" delivered mail with content " + string)
                                 else:
                                     journal.send("systemd-mailify:"+str(q_list[0])+ " at "
-                                            +str(q_list[1])+" failed ot deliver mail with content " + string)
+                                            +str(q_list[1])+" failed to deliver mail with content " + string)
 
                             else:
                                 continue
