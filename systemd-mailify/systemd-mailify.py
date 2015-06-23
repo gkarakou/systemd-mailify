@@ -352,5 +352,5 @@ if __name__ == "__main__":
             messaged = templated.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messaged)
         finally:
-            #lg.run()
+            lg.run()
             lg.start()
