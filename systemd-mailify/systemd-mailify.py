@@ -5,7 +5,7 @@ import time
 import datetime
 import select
 from systemd import journal
-from threading import Thread
+from multiprocessing import Process,Queue
 import ConfigParser
 import smtplib
 import email.utils
@@ -15,21 +15,16 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-class LogReader(threading.Thread):
+class LogReader(Process):
     """
     LogReader
     :desc: Class that notifies the user for failed systemd services
     Extends threading.Thread
     Has an constructor that calls the parent one, a run method and a destructor
     """
-
-    def __init__(self):
-        """
-        __init__
-        return parent constructor
-        """
-        Thread.__init__(self)
-
+    def __init__(self, queue):
+        super(Processor, self).__init__()
+        self.queue = queue
     def get_euid(self):
         """
         get_euid_
@@ -40,9 +35,9 @@ class LogReader(threading.Thread):
  #       print("getting uid: "+ str(uid))
         return uid
 
-    def user_to_uid(self, name):
+    def get_user(self, name):
         """
-        getuid_
+        get_user
         :desc : Function that returns user id as int from config
         return int
         """
@@ -68,6 +63,7 @@ class LogReader(threading.Thread):
         #parse [EMAIL]
 
         conf_dict = {}
+        user = conf.get("SYSTEMD-MAILIFY", "user")
         subject = conf.get("EMAIL", "subject")
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
@@ -149,6 +145,9 @@ class LogReader(threading.Thread):
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
         dictionary = self.parse_config()
+        username = dictionary["user"]
+        uid = self.get_user(username)
+        self.set_euid(uid)
         #for d in dictionary.iteritems():
         #    print d
         #print str(len(dictionary['starttls_cert']))
@@ -343,7 +342,8 @@ if __name__ == "__main__":
         journal.send("systemd-mailify: "+message)
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
-        lg = LogReader()
+        q = Queue()
+        lg = LogReader(q)
         lg.daemon = True
         pid = os.getpid()
         try:
@@ -354,4 +354,5 @@ if __name__ == "__main__":
             messaged = templated.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messaged)
         finally:
-            lg.run()
+            #lg.run()
+            lg.start()
