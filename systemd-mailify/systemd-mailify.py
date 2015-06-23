@@ -69,6 +69,7 @@ class LogReader(Process):
         subject = conf.get("EMAIL", "subject")
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
+        conf_dict['user'] = user
         conf_dict['email_subject'] = subject
         conf_dict['email_to'] = mail_to
         conf_dict['email_from'] = mail_from
