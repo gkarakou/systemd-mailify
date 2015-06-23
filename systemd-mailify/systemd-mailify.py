@@ -177,10 +177,6 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
-                if send:
-                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
-                else:
-                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
 
             # auth
             elif dictionary['auth'] == True:
@@ -234,6 +230,10 @@ class LogReader(multiprocessing.Process):
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
+                        if send:
+                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        else:
+                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -241,10 +241,6 @@ class LogReader(multiprocessing.Process):
                 finally:
                     s.quit()
                     del s
-                if send:
-                    que.put([self.name, datetime.datetime.now(), "SUCCESS"])
-                else:
-                    que.put([self.name, datetime.datetime.now(), "FAILURE"])
             else:
                 pass
         #starttls
