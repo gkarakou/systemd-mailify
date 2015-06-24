@@ -42,11 +42,21 @@ class LogReader(object):
         gid = os.getgid()
         if log == "log_file" or log == "both":
             if  os.path.isfile("/var/log/systemd-mailify.log"):
-                chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+                try:
+                    chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+                except Exception as ex:
+                    journal.send("systemd-mailify: there is a problem chowning the log\
+                            file. Please check the unit file for the\
+                            CAP_CHOWN capability ")
             else:
                 #create log file and chown/chmod
                 open('/var/log/systemd-mailify.conf', 'a').close()
-                chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+                try:
+                    chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+                except Exception as ex:
+                    journal.send("systemd-mailify: there is a problem chowning the log\
+                            file. Please check the unit file for the\
+                            CAP_CHOWN capability ")
             self.logg = True
         else:
             #journal logging
@@ -231,11 +241,11 @@ class LogReader(object):
             conf_dict['starttls_key'] = starttls_key
         else:
             conf_dict['starttls'] = False
-        
+
         #iter through dict sections and check whether there are empty values
 
-        
-        
+
+
         return conf_dict
 
 
@@ -260,13 +270,17 @@ class LogReader(object):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                     if isinstance(send, dict):
-                        que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        que.put([ datetime.datetime.now(), "SUCCESS"])
                     else:
-                        que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                        que.put([ datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                        self.logger.error(message)
+                    else:
+                        journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -279,13 +293,17 @@ class LogReader(object):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                     if isinstance(send, dict):
-                        que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                        que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                     else:
-                        que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                        que.put([ datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                        self.logger.error(message)
+                    else:
+                        journal.send("systemd-mailify: "+message)
                 finally:
                      s.quit()
                      del s
@@ -301,21 +319,25 @@ class LogReader(object):
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                        self.logger.error(message)
+                    else:
+                        journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -329,22 +351,26 @@ class LogReader(object):
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                        self.logger.error(message)
+                    else:
+                        journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -366,21 +392,25 @@ class LogReader(object):
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                                que.put([ datetime.datetime.now()[:19], "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                                que.put([ datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                        self.logger.error(message)
+                    else:
+                        journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -399,22 +429,26 @@ class LogReader(object):
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                                que.put([ datetime.datetime.now(), "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
+                                que.put([ datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                        self.logger.error(message)
+                    else:
+                        journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -470,12 +504,10 @@ class LogReader(object):
                                 worker.start()
                                 worker.join()
                                 q_list = queue.get()
-                                if q_list[2] == "SUCCESS":
-                                    journal.send("systemd-mailify:"+str(q_list[0])+
-                                            " at "+str(q_list[1])+" delivered mail with content: " + string)
-                                elif q_list[2] == "FAILURE":
-                                    journal.send("systemd-mailify:"+str(q_list[0])+
-                                            " at "+str(q_list[1])+" failed to deliver mail with content: " + string)
+                                if q_list[1] == "SUCCESS":
+                                    journal.send("systemd-mailify:" " at "+str(q_list[0])+" delivered mail with content: " + string)
+                                elif q_list[1] == "FAILURE":
+                                    journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                 else :
                                     journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
 
@@ -484,7 +516,11 @@ class LogReader(object):
                         except Exception as ex:
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
-                            journal.send("systemd-mailify: "+message)
+                            if self.logg == True and self.logg_facility == "log_file"\
+                            or self.logg_facility == "both":
+                                self.logger.error(message)
+                            else:
+                                journal.send("systemd-mailify: "+message)
                     else:
                         continue
            #back to normal journal reading
@@ -521,7 +557,6 @@ if __name__ == "__main__":
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
         lg = LogReader()
-        lg.daemon = True
         pid = os.getpid()
         try:
             with open('/var/run/systemd-mailify.pid', 'w') as of:
@@ -532,4 +567,3 @@ if __name__ == "__main__":
             journal.send("systemd-mailify: "+messaged)
         finally:
             lg.run()
-            lg.start()
