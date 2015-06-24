@@ -264,11 +264,9 @@ class LogReader(multiprocessing.Process):
             conf_dict['starttls_key'] = starttls_key
         else:
             conf_dict['starttls'] = False
-
         #iter through dict sections and check whether there are empty values
-
-
-
+        for key, val in conf_dict.iteritems():
+            journal.send("systemd-mailify: ###dictionary###: key == " + str(key)+ " value == "+ str(val))
         return conf_dict
 
 
