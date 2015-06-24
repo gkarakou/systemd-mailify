@@ -29,6 +29,8 @@ class LogReader(object):
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
         user = conf.get("SYSTEMD-MAILIFY", "user")
+        if len(user) == 0:
+            user = "root"
         log = conf.get("LOGGING", "log")
         if log == "log_file":
             self.logg_facility = "log_file"
@@ -40,7 +42,8 @@ class LogReader(object):
         journal.send("systemd-mailify: inside __init__ self.loggfacility == "+\
                 self.logg_facility)
         uid = self.get_conf_userid(user)
-        gid = os.getgid()
+        gid = 1001
+        #gid = os.getgid()
         if log == "log_file" or log == "both":
             if  os.path.isfile("/var/log/systemd-mailify.log"):
                 try:
