@@ -280,6 +280,7 @@ class LogReader(object):
     def mail_worker(self, stri, que, dictio):
 
         print 'In mail_worker()'
+        journal.send('systemd-mailify: In mail_worker()')
         dictionary = dictio
         msg = MIMEMultipart("alternative")
         #get it from the queue?
