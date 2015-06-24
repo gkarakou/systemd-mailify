@@ -172,10 +172,10 @@ class LogReader(object):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
-        if  self.logg_facility == "log_file" or\
-        self.logg_facility == "both":
-            self.logger.info("convert username to uid: \
-             "+str(username_to_id))
+        #if  self.logg_facility == "log_file" or\
+        #self.logg_facility == "both":
+        #    self.logger.info("convert username to uid: \
+        #     "+str(username_to_id))
         #journal.send("systemd-mailify in get_user: "+str(username_to_id))
         #print "getting uid: "+ str(username_to_id)
         return username_to_id
