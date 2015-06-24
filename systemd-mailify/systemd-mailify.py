@@ -193,7 +193,11 @@ class LogReader(object):
 
         conf_dict = {}
         user = conf.get("SYSTEMD-MAILIFY", "user")
+        if len(user) == 0:
+            user = "root"
         subject = conf.get("EMAIL", "subject")
+        if len(subject) == 0:
+            subject = "systemd-mailify"
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
         conf_dict['user'] = user
@@ -536,8 +540,7 @@ class LogReader(object):
                         except Exception as ex:
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
-                            if self.logg == True and self.logg_facility == "log_file"\
-                            or self.logg_facility == "both":
+                            if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
                                 self.logger.error(message)
                             else:
                                 journal.send("systemd-mailify: "+message)
