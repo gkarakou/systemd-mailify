@@ -500,6 +500,8 @@ class LogReader(object)
         queue = Queue()
         j_reader = journal.Reader()
         j_reader.log_level(journal.LOG_INFO)
+        print "inside run()"
+        journal.send("systemd-mailify inside run()")
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
 
         # it is questionable whether there is actually a record with the real
@@ -513,7 +515,6 @@ class LogReader(object)
             # if it prints True it is pollable
             #reliable = j.reliable_fd()
             #print reliable
-            print "inside poller in run()"
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting ==  or waiting == 2
