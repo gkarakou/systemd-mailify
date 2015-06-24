@@ -26,24 +26,43 @@ class LogReader(multiprocessing.Process):
     is used for notifying the parent process about which tasks were sucessful
     """
 
+    def create_log_file(self):
+        conf = ConfigParser.RawConfigParser()
+        conf.read('/etc/systemd-mailify.conf')
+        user = conf.get("SYSTEMD-MAILIFY", "user")
+        log = conf.get("LOGGING", "log")
+        uid = self.get_conf_userid(user)
+        gid = os.getgid()
+        if log == "log_file" or log == "both":
+            if  os.path.isfile("/var/log/systemd-mailify.log"):
+                chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+            else:
+                #create log file and chown/chmod
+                open('/var/log/systemd-mailify.conf', 'a').close()
+                chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+            boolean = True
+        else:
+            #journal logging
+            boolean = False
+        return boolean
+
     def get_logger(self):
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
-        conf_log_dict = {}
         log = conf.get("LOGGING", "log")
+        logger = logging.getLogger('systemd-mailify')
         log_level = conf.get("LOGGING", "log_level")
-        conf_log_dict['log'] = log
-        conf_log_dict['log_level'] = log_level
-        if conf_log_dict['log'] == "log_file" or conf_log_dict['log'] == "both":
-            logger = logging.getLogger('systemd-mailify')
-            #create log file and chown/chmod
+        str_to_num = { "ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30 }
+        for key, value in str_to_num.iteritems():
+            if log_level == key:
+                level = value
+        if log == "log_file" or log == "both":
             hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
-            logger.setLevel(logging.WARNING)
+            logger.setLevel(level)
         else:
-            #journal logging
             logger = None
         return logger
 
@@ -61,7 +80,39 @@ class LogReader(multiprocessing.Process):
         #journal.send("systemd-mailify pid in get_euid: "+str(pid))
         return uid
 
-    def get_user(self, name):
+    def set_euid(self, uid):
+        """set_euid
+        return int
+        :param *args:
+        """
+        euid = int(uid)
+        setuid = os.seteuid(euid)
+        log = self.get_logger()
+        if setuid == None:
+            if log is not None:
+                log.info('setting euid: '+ str(self.get_euid()))
+            else:
+                pass
+        else:
+            if log is not None:
+                log.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+
+            else:
+                journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+
+
+
+
+    def get_egid(self):
+        gid = os.getgid()
+        return gid
+
+    def set_egid(self):
+        egid = 190
+        gid = os.setegid(egid)
+        #return gid
+
+    def get_conf_userid(self, name):
         """
         get_user
         :desc : Function that returns user id as int from config
@@ -72,15 +123,6 @@ class LogReader(multiprocessing.Process):
         #print "getting uid: "+ str(username_to_id)
         return username_to_id
 
-    def set_euid(self, uid):
-        """set_euid
-        return int
-        :param *args:
-        """
-        euid = int(uid)
-        setuid = os.seteuid(euid)
-        #if setuid == None:
-        #    journal.send("systemd-mailify in set_euid: "+str(self.get_euid()))
 
     def parse_config(self):
         conf = ConfigParser.RawConfigParser()
@@ -355,9 +397,14 @@ class LogReader(multiprocessing.Process):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
+        #first as root execute logger function to create
+        #/var/log/systemd-mailify.log
+        # then do setuid, setgid voodo magic
+
+
         dictionary = self.parse_config()
         username = dictionary["user"]
-        uid = self.get_user(username)
+        uid = self.get_conf_userid(username)
         self.set_euid(uid)
         queue = Queue()
         j_reader = journal.Reader()
