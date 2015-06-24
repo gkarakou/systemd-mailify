@@ -69,7 +69,7 @@ class LogReader(object):
             self.logg = False
         print "inside __init__ self.logg == "+ str(self.logg)
         journal.send("systemd-mailify: inside __init__ self.logg == "+\
-                self.logg)
+                str(self.logg))
         self.logger = logging.getLogger('systemd-mailify')
         log_level = conf.get("LOGGING", "log_level")
         str_to_num = {"ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30}
