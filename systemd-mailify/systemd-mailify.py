@@ -14,15 +14,38 @@ from pwd import getpwnam
 import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import logging
+
 
 class LogReader(multiprocessing.Process):
     """
     LogReader
     :desc: Class that mails a user for failed systemd services
     Extends multiprocessing.Process
-    Implements a mail worker that is spawned to mail failed services. A queue
+    Implements(! interface) a mail worker thread that is spawned to mail failed services. A queue
     is used for notifying the parent process about which tasks were sucessful
     """
+
+    def get_logger(self):
+        conf = ConfigParser.RawConfigParser()
+        conf.read('/etc/systemd-mailify.conf')
+        conf_log_dict = {}
+        log = conf.get("LOGGING", "log")
+        log_level = conf.get("LOGGING", "log_level")
+        conf_log_dict['log'] = log
+        conf_log_dict['log_level'] = log_level
+        if conf_log_dict['log'] == "log_file" or conf_log_dict['log'] == "both":
+            logger = logging.getLogger('systemd-mailify')
+            #create log file and chown/chmod
+            hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
+            formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+            hdlr.setFormatter(formatter)
+            logger.addHandler(hdlr)
+            logger.setLevel(logging.WARNING)
+        else:
+            #journal logging
+            logger = None
+        return logger
 
     def get_euid(self):
         """
@@ -182,9 +205,9 @@ class LogReader(multiprocessing.Process):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                     if isinstance(send, dict):
-                        que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                        que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                     else:
-                        que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                        que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -204,17 +227,17 @@ class LogReader(multiprocessing.Process):
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -232,18 +255,18 @@ class LogReader(multiprocessing.Process):
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                            que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                         else:
-                            que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                            que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -269,17 +292,17 @@ class LogReader(multiprocessing.Process):
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                                que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                                que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -302,7 +325,7 @@ class LogReader(multiprocessing.Process):
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                             else:
                                 que.put([self.name, datetime.datetime.now(), "FAILURE"])
                         else:
@@ -311,9 +334,9 @@ class LogReader(multiprocessing.Process):
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([self.name, datetime.datetime.now(), "SUCCESS"])
+                                que.put([self.name, datetime.datetime.now()[:19], "SUCCESS"])
                             else:
-                                que.put([self.name, datetime.datetime.now(), "FAILURE"])
+                                que.put([self.name, datetime.datetime.now()[:19], "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
