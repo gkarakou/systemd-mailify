@@ -279,7 +279,7 @@ class LogReader(object):
 
     def mail_worker(self, stri, que, dictio):
 
-        #print 'In %s' % self.name
+        print 'In mail_worker()'
         dictionary = dictio
         msg = MIMEMultipart("alternative")
         #get it from the queue?
