@@ -10,7 +10,6 @@ import smtplib
 import email.utils
 import os
 from pwd import getpwnam
-import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
