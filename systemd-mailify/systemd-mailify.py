@@ -42,7 +42,7 @@ class LogReader(object):
         journal.send("systemd-mailify: inside __init__ self.loggfacility == "+\
                 self.logg_facility)
         uid = self.get_conf_userid(user)
-        gid = 1001
+        gid = 0 
         #gid = os.getgid()
         if log == "log_file" or log == "both":
             if  os.path.isfile("/var/log/systemd-mailify.log"):
