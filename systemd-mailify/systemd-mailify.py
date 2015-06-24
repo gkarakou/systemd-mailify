@@ -17,7 +17,7 @@ from email.mime.text import MIMEText
 import logging
 
 
-class LogReader(multiprocessing.Process):
+class LogReader(object):
     """
     LogReader
     :desc: Class that mails a user for failed systemd services
@@ -26,11 +26,18 @@ class LogReader(multiprocessing.Process):
     is used for notifying the parent process about which tasks were sucessful
     """
 
-    def create_log_file(self):
+    def __init__(self):
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
         user = conf.get("SYSTEMD-MAILIFY", "user")
         log = conf.get("LOGGING", "log")
+        if log == "log_file":
+            self.logg_facility = "log_file"
+        elif log == "journal":
+            self.logg_facility = "journal"
+        else:
+            self.logg_facility = "both"
+
         uid = self.get_conf_userid(user)
         gid = os.getgid()
         if log == "log_file" or log == "both":
@@ -40,31 +47,24 @@ class LogReader(multiprocessing.Process):
                 #create log file and chown/chmod
                 open('/var/log/systemd-mailify.conf', 'a').close()
                 chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
-            boolean = True
+            self.logg = True
         else:
             #journal logging
-            boolean = False
-        return boolean
-
-    def get_logger(self):
-        conf = ConfigParser.RawConfigParser()
-        conf.read('/etc/systemd-mailify.conf')
-        log = conf.get("LOGGING", "log")
-        logger = logging.getLogger('systemd-mailify')
+            self.logg = False
+        self.logger = logging.getLogger('systemd-mailify')
         log_level = conf.get("LOGGING", "log_level")
-        str_to_num = { "ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30 }
+        str_to_num = {"ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30}
         for key, value in str_to_num.iteritems():
             if log_level == key:
-                level = value
+                self.logg_level = value
         if log == "log_file" or log == "both":
             hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
-            logger.addHandler(hdlr)
-            logger.setLevel(level)
+            self.logger.addHandler(hdlr)
+            self.logger.setLevel(self.logg_level)
         else:
-            logger = None
-        return logger
+            self.logger = None
 
     def get_euid(self):
         """
@@ -87,15 +87,17 @@ class LogReader(multiprocessing.Process):
         """
         euid = int(uid)
         setuid = os.seteuid(euid)
-        log = self.get_logger()
         if setuid == None:
-            if log is not None:
-                log.info('setting euid: '+ str(self.get_euid()))
+            if self.logg == True:
+                self.logger.info('setting euid: '+ str(self.get_euid()))
             else:
                 pass
         else:
-            if log is not None:
-                log.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+            if self.logg == True and self.logg_facility == "both":
+                self.logger.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+                journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+            elif self.logg == True and self.logg_facility == "log_file":
+                self.logger.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
 
             else:
                 journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -110,7 +112,28 @@ class LogReader(multiprocessing.Process):
     def set_egid(self):
         egid = 190
         gid = os.setegid(egid)
-        #return gid
+        if gid == None:
+            if self.logg == True:
+                self.logger.info('setting gid: '+ str(self.get_egid()))
+            else:
+                pass
+        else:
+            if self.logg == True and self.logg_facility == "both":
+                self.logger.error("there is a problem setting the correct gid\
+                        for the process to run as. Please check the unit file\
+                        for the CAP_SETGID capability ")
+                journal.send("systemd-mailify: there is a problem setting the\
+                        correct gid for the process to run as. Please check\
+                        the unit file for the CAP_SETGID capability ")
+            elif self.logg == True and self.logg_facility == "log_file":
+                self.logger.error("there is a problem setting the correct gid\
+                        for the process to run as. Please check the unit file\
+                        for the CAP_SETGID capability ")
+
+            else:
+                journal.send("systemd-mailify: there is a problem setting the\
+                        correct gid for the process to run as. Please check\
+                        the unit file for the CAP_SETGID capability ")
 
     def get_conf_userid(self, name):
         """
@@ -119,6 +142,10 @@ class LogReader(multiprocessing.Process):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
+        if self.logg == True and self.logg_facility == "log_file" or\
+        self.logg_facility == "both":
+            self.logger.info("convert username to uid: \
+             "+str(username_to_id))
         #journal.send("systemd-mailify in get_user: "+str(username_to_id))
         #print "getting uid: "+ str(username_to_id)
         return username_to_id
@@ -169,14 +196,14 @@ class LogReader(multiprocessing.Process):
 
         #parse [SMTPS]
         smtps = conf.getboolean("SMTPS", "active")
-        if smtps and smtps == True:
+        if smtps == True:
             conf_dict['smtps'] = True
             smtps_host = conf.get("SMTPS", "host")
             if len(smtps_host) == 0:
                 smtps_host = "localhost"
             conf_dict['smtps_host'] = smtps_host
             smtps_port = conf.getint("SMTPS", "port")
-            if smtps_port:
+            if not smtps_port:
                 smtps_port = 465
             conf_dict['smtps_port'] = smtps_port
             smtps_cert = conf.get("SMTPS", "cert_file")
@@ -188,14 +215,14 @@ class LogReader(multiprocessing.Process):
 
         #parse [STARTTLS]
         starttls = conf.getboolean("STARTTLS", "active")
-        if starttls and starttls == True:
+        if  starttls == True:
             conf_dict['starttls'] = True
             starttls_host = conf.get("STARTTLS", "host")
             if len(starttls_host) == 0:
                 starttls_host = "localhost"
             conf_dict['starttls_host'] = starttls_host
             starttls_port = conf.getint("STARTTLS", "port")
-            if starttls_port:
+            if not starttls_port:
                 starttls_port = 587
             conf_dict['starttls_port'] = starttls_port
             starttls_cert = conf.get("STARTTLS", "cert_file")
@@ -204,6 +231,11 @@ class LogReader(multiprocessing.Process):
             conf_dict['starttls_key'] = starttls_key
         else:
             conf_dict['starttls'] = False
+        
+        #iter through dict sections and check whether there are empty values
+
+        
+        
         return conf_dict
 
 
