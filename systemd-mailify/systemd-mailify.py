@@ -524,6 +524,7 @@ class LogReader(multiprocessing.Process):
                         try:
                             string = entry['MESSAGE']
                             if string and pattern in string:
+                                journal.send("systemd-mailify: caught pattern "+string)
                                 #queue.put(string)
                                 #http://pymotw.com/2/smtplib/
                                 worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
