@@ -87,7 +87,7 @@ class LogReader(object):
 
         print "inside __init__ self.logger == "+ str(self.logger)
         journal.send("systemd-mailify: inside __init__ self.logger == "+\
-                self.logger)
+                str(self.logger))
 
     def get_euid(self):
         """
