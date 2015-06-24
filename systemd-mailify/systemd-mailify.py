@@ -5,6 +5,7 @@ import select
 from systemd import journal
 from Queue import Queue
 from threading import Thread
+import multiprocessing
 import ConfigParser
 import smtplib
 import email.utils
@@ -15,7 +16,7 @@ from email.mime.text import MIMEText
 import logging
 
 
-class LogReader(object):
+class LogReader(multiprocessing.Process):
     """
     LogReader
     :desc: Class that mails a user for failed systemd services
@@ -25,6 +26,7 @@ class LogReader(object):
     """
 
     def __init__(self):
+        super(LogReader, self).__init__()
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
         user = conf.get("SYSTEMD-MAILIFY", "user")
@@ -153,21 +155,13 @@ class LogReader(object):
                 pass
         else:
             if self.logg == True and self.logg_facility == "both":
-                self.logger.error("there is a problem setting the correct gid\
-                        for the process to run as. Please check the unit file\
-                        for the CAP_SETGID capability ")
-                journal.send("systemd-mailify: there is a problem setting the\
-                        correct gid for the process to run as. Please check\
-                        the unit file for the CAP_SETGID capability ")
+                self.logger.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
+                journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
             elif self.logg == True and self.logg_facility == "log_file":
-                self.logger.error("there is a problem setting the correct gid\
-                        for the process to run as. Please check the unit file\
-                        for the CAP_SETGID capability ")
+                self.logger.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 
             else:
-                journal.send("systemd-mailify: there is a problem setting the\
-                        correct gid for the process to run as. Please check\
-                        the unit file for the CAP_SETGID capability ")
+                journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 
     def get_conf_userid(self, name):
         """
@@ -175,12 +169,13 @@ class LogReader(object):
         :desc : Function that returns user id as int from config
         return int
         """
-        username_to_id = getpwnam(name).pw_uid
-        #if  self.logg_facility == "log_file" or\
-        #self.logg_facility == "both":
-        #    self.logger.info("convert username to uid: \
-        #     "+str(username_to_id))
-        #journal.send("systemd-mailify in get_user: "+str(username_to_id))
+
+        try:
+            username_to_id = getpwnam(name).pw_uid
+        except Exception as ex:
+            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: Error getting uid from the username provided in the .conf")
         #print "getting uid: "+ str(username_to_id)
         return username_to_id
 
