@@ -526,7 +526,7 @@ class LogReader(multiprocessing.Process):
                             if string and pattern in string:
                                 #queue.put(string)
                                 #http://pymotw.com/2/smtplib/
-                                worker = Thread(target=self.mail_worker, args=(string, queue, dictionary))
+                                worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
                                 worker.start()
                                 worker.join()
                                 q_list = queue.get()
