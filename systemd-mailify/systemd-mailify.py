@@ -533,7 +533,7 @@ class LogReader(object):
                                     journal.send("systemd-mailify:" " at "+str(q_list[0])+" delivered mail with content: " + string)
                                 elif q_list[1] == "FAILURE":
                                     journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
-                                else :
+                                else:
                                     journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
 
                             else:
