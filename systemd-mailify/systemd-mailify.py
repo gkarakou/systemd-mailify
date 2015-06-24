@@ -294,9 +294,9 @@ class LogReader(object):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                     if isinstance(send, dict):
-                        que.put([ datetime.datetime.now(), "SUCCESS"])
+                        que.put([datetime.datetime.now(), "SUCCESS"])
                     else:
-                        que.put([ datetime.datetime.now(), "FAILURE"])
+                        que.put([datetime.datetime.now(), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -317,9 +317,11 @@ class LogReader(object):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                     if isinstance(send, dict):
-                        que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                        que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                            %H:%M:%S"), "SUCCESS"])
                     else:
-                        que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                        que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                            %H:%M:%S"), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -343,17 +345,21 @@ class LogReader(object):
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "SUCCESS"])
                         else:
-                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "SUCCESS"])
                         else:
-                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -375,18 +381,22 @@ class LogReader(object):
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "SUCCESS"])
                         else:
-                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "SUCCESS"])
                         else:
-                            que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                %H:%M:%S"), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -416,17 +426,21 @@ class LogReader(object):
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "SUCCESS"])
                             else:
-                                que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "SUCCESS"])
                             else:
-                                que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -453,18 +467,21 @@ class LogReader(object):
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "SUCCESS"])
                             else:
-                                que.put([ datetime.datetime.now(), "FAILURE"])
+                                que.put([datetime.datetime.now(), "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([ datetime.datetime.now()[:19], "SUCCESS"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "SUCCESS"])
                             else:
-                                que.put([ datetime.datetime.now()[:19], "FAILURE"])
+                                que.put([datetime.datetime.now().strftime("%Y-%m-%d\
+                                    %H:%M:%S"), "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
