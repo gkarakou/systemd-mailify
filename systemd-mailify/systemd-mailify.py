@@ -37,12 +37,14 @@ class LogReader(object):
         else:
             self.logg_facility = "both"
         print "inside __init__ self.loggfacility == "+ self.logg_facility
+        journal.send("systemd-mailify: inside __init__ self.loggfacility == "+\
+                self.logg_facility)
         uid = self.get_conf_userid(user)
         gid = os.getgid()
         if log == "log_file" or log == "both":
             if  os.path.isfile("/var/log/systemd-mailify.log"):
                 try:
-                    chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
+                    chn = os.chown("/var/log/systemd-mailify.log", uid, gid)
                 except Exception as ex:
                     journal.send("systemd-mailify: there is a problem chowning the log\
                             file. Please check the unit file for the\
@@ -66,6 +68,8 @@ class LogReader(object):
             #journal logging
             self.logg = False
         print "inside __init__ self.logg == "+ str(self.logg)
+        journal.send("systemd-mailify: inside __init__ self.logg == "+\
+                self.logg)
         self.logger = logging.getLogger('systemd-mailify')
         log_level = conf.get("LOGGING", "log_level")
         str_to_num = {"ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30}
@@ -82,6 +86,8 @@ class LogReader(object):
             self.logger = None
 
         print "inside __init__ self.logger == "+ str(self.logger)
+        journal.send("systemd-mailify: inside __init__ self.logger == "+\
+                self.logger)
 
     def get_euid(self):
         """
