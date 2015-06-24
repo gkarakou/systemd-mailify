@@ -52,7 +52,9 @@ class LogReader(object):
             else:
                 #create log file and chown/chmod
                 try:
-                    open('/var/log/systemd-mailify.conf', 'w').close()
+                    open('/var/log/systemd-mailify.conf', 'w+')
+                    #with open('/var/log/systemd-mailify.conf', 'a+') as f:
+                    #    f.write()
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
