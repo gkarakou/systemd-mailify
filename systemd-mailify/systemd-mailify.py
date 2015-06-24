@@ -500,8 +500,13 @@ class LogReader(multiprocessing.Process):
         uid = self.get_conf_userid(username)
         self.set_euid(uid)
         queue = Queue()
-        j_reader = journal.Reader()
         journal.send("systemd-mailify:"+"inside run() init Queue"+ str(queue))
+        try:
+            j_reader = journal.Reader()
+        except Exception as ex:
+            templa = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messa = templa.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: "+messa)
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
 
@@ -510,7 +515,12 @@ class LogReader(multiprocessing.Process):
         # near the end of the journal fd
         j_reader.seek_realtime(datetime.datetime.now())
         poller = select.poll()
-        poller.register(j_reader, j_reader.get_events())
+        try:
+            poller.register(j_reader, j_reader.get_events())
+        except Exception as ex:
+            templa = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messa = templa.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: "+messa)
         while poller.poll():
             #next is a debugging call
             # if it prints True it is pollable
