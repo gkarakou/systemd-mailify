@@ -122,12 +122,15 @@ class LogReader(multiprocessing.Process):
         :param *args:
         """
         euid = int(uid)
-        setuid = os.seteuid(euid)
+        try:
+            setuid = os.seteuid(euid)
+        except Exception as ex:
+            templat = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messag = templat.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
             if self.logg == True:
                 self.logger.info('setting euid: '+ str(self.get_euid()))
-            else:
-                pass
         else:
             if self.logg == True and self.logg_facility == "both":
                 self.logger.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -265,8 +268,8 @@ class LogReader(multiprocessing.Process):
         else:
             conf_dict['starttls'] = False
         #iter through dict sections and check whether there are empty values
-        for key, val in conf_dict.iteritems():
-            journal.send("systemd-mailify: ###dictionary###: key == " + str(key)+ " value == "+ str(val))
+        #for key, val in conf_dict.iteritems():
+        #    journal.send("systemd-mailify: ###dictionary###: key == " + str(key)+ " value == "+ str(val))
         return conf_dict
 
 
@@ -498,6 +501,7 @@ class LogReader(multiprocessing.Process):
         self.set_euid(uid)
         queue = Queue()
         j_reader = journal.Reader()
+        journal.send("systemd-mailify:"+"inside run() init Queue"+ str(queue))
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
 
