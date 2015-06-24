@@ -486,7 +486,8 @@ class LogReader(object):
         #/var/log/systemd-mailify.log
         # then do setuid, setgid voodo magic
 
-
+        print "inside run()"
+        journal.send("systemd-mailify:"+"inside run()")
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_conf_userid(username)
