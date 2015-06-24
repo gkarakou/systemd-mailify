@@ -50,7 +50,12 @@ class LogReader(object):
                             CAP_CHOWN capability ")
             else:
                 #create log file and chown/chmod
-                open('/var/log/systemd-mailify.conf', 'a').close()
+                try:
+                    open('/var/log/systemd-mailify.conf', 'a').close()
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+ message)
                 try:
                     chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
                 except Exception as ex:
