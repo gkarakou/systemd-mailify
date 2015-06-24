@@ -86,6 +86,10 @@ class LogReader(object):
         else:
             self.logger = None
 
+        print "inside __init__ self.logg_level == "+ str(self.logg_level)
+        journal.send("systemd-mailify: inside __init__ self.logg_level == "+\
+                str(self.logg_level))
+
         print "inside __init__ self.logger == "+ str(self.logger)
         journal.send("systemd-mailify: inside __init__ self.logger == "+\
                 str(self.logger))
