@@ -152,7 +152,7 @@ class LogReader(object):
         return int
         """
         username_to_id = getpwnam(name).pw_uid
-        if self.logg == True and self.logg_facility == "log_file" or\
+        if  self.logg_facility == "log_file" or\
         self.logg_facility == "both":
             self.logger.info("convert username to uid: \
              "+str(username_to_id))
