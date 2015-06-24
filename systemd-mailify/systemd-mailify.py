@@ -48,7 +48,7 @@ class LogReader(object):
             if  os.path.isfile("/var/log/systemd-mailify.log"):
                 try:
                     os.chown("/var/log/systemd-mailify.log", uid, gid)
-                    os.chmod("/var/log/systemd-mailify.log", 0660)
+                    os.chmod("/var/log/systemd-mailify.log", 660)
                 except Exception as ex:
                     journal.send("systemd-mailify: there is a problem chowning the log\
                             file. Please check the unit file for the\
