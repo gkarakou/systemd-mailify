@@ -89,7 +89,7 @@ class LogReader(multiprocessing.Process):
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
-            logger.setLevel(self.logg_level)
+            logger.setLevel(logging+"."+self.logg_level)
             self.logger = logger
         else:
             self.logger = None
