@@ -5,6 +5,7 @@ import select
 from systemd import journal
 from Queue import Queue
 from threading import Thread
+import multiprocessing
 import ConfigParser
 import smtplib
 import email.utils
@@ -15,7 +16,7 @@ from email.mime.text import MIMEText
 import logging
 
 
-class LogReader(object):
+class LogReader(multiprocessing.Process):
     """
     LogReader
     :desc: Class that mails a user for failed systemd services
@@ -25,6 +26,7 @@ class LogReader(object):
     """
 
     def __init__(self):
+        super(LogReader, self).__init__()
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
         user = conf.get("SYSTEMD-MAILIFY", "user")
@@ -120,12 +122,15 @@ class LogReader(object):
         :param *args:
         """
         euid = int(uid)
-        setuid = os.seteuid(euid)
+        try:
+            setuid = os.seteuid(euid)
+        except Exception as ex:
+            templat = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messag = templat.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
             if self.logg == True:
                 self.logger.info('setting euid: '+ str(self.get_euid()))
-            else:
-                pass
         else:
             if self.logg == True and self.logg_facility == "both":
                 self.logger.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -153,21 +158,13 @@ class LogReader(object):
                 pass
         else:
             if self.logg == True and self.logg_facility == "both":
-                self.logger.error("there is a problem setting the correct gid\
-                        for the process to run as. Please check the unit file\
-                        for the CAP_SETGID capability ")
-                journal.send("systemd-mailify: there is a problem setting the\
-                        correct gid for the process to run as. Please check\
-                        the unit file for the CAP_SETGID capability ")
+                self.logger.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
+                journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
             elif self.logg == True and self.logg_facility == "log_file":
-                self.logger.error("there is a problem setting the correct gid\
-                        for the process to run as. Please check the unit file\
-                        for the CAP_SETGID capability ")
+                self.logger.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 
             else:
-                journal.send("systemd-mailify: there is a problem setting the\
-                        correct gid for the process to run as. Please check\
-                        the unit file for the CAP_SETGID capability ")
+                journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 
     def get_conf_userid(self, name):
         """
@@ -175,12 +172,13 @@ class LogReader(object):
         :desc : Function that returns user id as int from config
         return int
         """
-        username_to_id = getpwnam(name).pw_uid
-        #if  self.logg_facility == "log_file" or\
-        #self.logg_facility == "both":
-        #    self.logger.info("convert username to uid: \
-        #     "+str(username_to_id))
-        #journal.send("systemd-mailify in get_user: "+str(username_to_id))
+
+        try:
+            username_to_id = getpwnam(name).pw_uid
+        except Exception as ex:
+            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: Error getting uid from the username provided in the .conf")
         #print "getting uid: "+ str(username_to_id)
         return username_to_id
 
@@ -193,7 +191,11 @@ class LogReader(object):
 
         conf_dict = {}
         user = conf.get("SYSTEMD-MAILIFY", "user")
+        if len(user) == 0:
+            user = "root"
         subject = conf.get("EMAIL", "subject")
+        if len(subject) == 0:
+            subject = "systemd-mailify"
         mail_from = conf.get("EMAIL", "mail_from")
         mail_to = conf.get("EMAIL", "mail_to")
         conf_dict['user'] = user
@@ -265,18 +267,17 @@ class LogReader(object):
             conf_dict['starttls_key'] = starttls_key
         else:
             conf_dict['starttls'] = False
-
         #iter through dict sections and check whether there are empty values
-
-
-
+        #for key, val in conf_dict.iteritems():
+        #    journal.send("systemd-mailify: ###dictionary###: key == " + str(key)+ " value == "+ str(val))
         return conf_dict
 
 
-    def mail_worker(self, stri, que):
+    def mail_worker(self, stri, que, dictio):
 
-        #print 'In %s' % self.name
-        dictionary = self.parse_config()
+        print 'In mail_worker()'
+        journal.send('systemd-mailify: In mail_worker()')
+        dictionary = dictio
         msg = MIMEMultipart("alternative")
         #get it from the queue?
         stripped = stri.strip()
@@ -300,10 +301,11 @@ class LogReader(object):
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                        self.logger.error(message)
-                    else:
-                        journal.send("systemd-mailify: "+message)
+                    journal.send("systemd-mailify: "+message)
+                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                    #    self.logger.error(message)
+                    #else:
+                    #    journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -322,10 +324,11 @@ class LogReader(object):
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                        self.logger.error(message)
-                    else:
-                        journal.send("systemd-mailify: "+message)
+                    journal.send("systemd-mailify: "+message)
+                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                    #    self.logger.error(message)
+                    #else:
+                    #    journal.send("systemd-mailify: "+message)
                 finally:
                      s.quit()
                      del s
@@ -356,10 +359,11 @@ class LogReader(object):
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                        self.logger.error(message)
-                    else:
-                        journal.send("systemd-mailify: "+message)
+                    journal.send("systemd-mailify: "+message)
+                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                    #    self.logger.error(message)
+                    #else:
+                    #    journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -388,10 +392,11 @@ class LogReader(object):
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                        self.logger.error(message)
-                    else:
-                        journal.send("systemd-mailify: "+message)
+                    journal.send("systemd-mailify: "+message)
+                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                    #    self.logger.error(message)
+                    #else:
+                    #    journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -427,10 +432,11 @@ class LogReader(object):
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                        self.logger.error(message)
-                    else:
-                        journal.send("systemd-mailify: "+message)
+                    journal.send("systemd-mailify: "+message)
+                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                    #    self.logger.error(message)
+                    #else:
+                    #    journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -464,10 +470,11 @@ class LogReader(object):
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                        self.logger.error(message)
-                    else:
-                        journal.send("systemd-mailify: "+message)
+                    journal.send("systemd-mailify: "+message)
+                   # if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                   #     self.logger.error(message)
+                   # else:
+                   #     journal.send("systemd-mailify: "+message)
                 finally:
                     s.quit()
                     del s
@@ -486,13 +493,21 @@ class LogReader(object):
         #/var/log/systemd-mailify.log
         # then do setuid, setgid voodo magic
 
-
+        print "inside run()"
+        journal.send("systemd-mailify:"+"inside run()")
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_conf_userid(username)
         self.set_euid(uid)
+        self.set_egid()
         queue = Queue()
-        j_reader = journal.Reader()
+        journal.send("systemd-mailify:"+"inside run() init Queue"+ str(queue))
+        try:
+            j_reader = journal.Reader()
+        except Exception as ex:
+            templa = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messa = templa.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: "+messa)
         j_reader.log_level(journal.LOG_INFO)
         # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
 
@@ -501,7 +516,12 @@ class LogReader(object):
         # near the end of the journal fd
         j_reader.seek_realtime(datetime.datetime.now())
         poller = select.poll()
-        poller.register(j_reader, j_reader.get_events())
+        try:
+            poller.register(j_reader, j_reader.get_events())
+        except Exception as ex:
+            templa = "An exception of type {0} occured. Arguments:\n{1!r}"
+            messa = templa.format(type(ex).__name__, ex.args)
+            journal.send("systemd-mailify: "+messa)
         while poller.poll():
             #next is a debugging call
             # if it prints True it is pollable
@@ -517,9 +537,10 @@ class LogReader(object):
                         try:
                             string = entry['MESSAGE']
                             if string and pattern in string:
+                                journal.send("systemd-mailify: caught pattern "+string)
                                 #queue.put(string)
                                 #http://pymotw.com/2/smtplib/
-                                worker = Thread(target=self.mail_worker, args=(string, queue))
+                                worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
                                 worker.start()
                                 worker.join()
                                 q_list = queue.get()
@@ -535,11 +556,11 @@ class LogReader(object):
                         except Exception as ex:
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
-                            if self.logg == True and self.logg_facility == "log_file"\
-                            or self.logg_facility == "both":
-                                self.logger.error(message)
-                            else:
-                                journal.send("systemd-mailify: "+message)
+                            journal.send("systemd-mailify: "+message)
+                            #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                            #    self.logger.error(message)
+                            #else:
+                            #    journal.send("systemd-mailify: "+message)
                     else:
                         continue
            #back to normal journal reading
