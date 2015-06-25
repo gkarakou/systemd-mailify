@@ -1,5 +1,5 @@
 [Unit]
- Description=systemd-mailify Service
+ Description=systemd-mailify service
  ConditionFileNotEmpty=/etc/systemd-mailify.conf
  DefaultDependencies=no
  After=systemd-journald.service
