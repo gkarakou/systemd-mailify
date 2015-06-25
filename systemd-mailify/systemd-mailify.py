@@ -10,6 +10,7 @@ import ConfigParser
 import smtplib
 import email.utils
 import os
+import sys
 from pwd import getpwnam
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -39,25 +40,23 @@ class LogReader(multiprocessing.Process):
             self.logg_facility = "journal"
         else:
             self.logg_facility = "both"
-        print "inside __init__ self.loggfacility == "+ self.logg_facility
-        journal.send("systemd-mailify: inside __init__ self.loggfacility == "+\
-                self.logg_facility)
         uid = self.get_conf_userid(user)
         gid = 0
-        #gid = os.getgid()
         if log == "log_file" or log == "both":
             if  os.path.isfile("/var/log/systemd-mailify.log"):
                 try:
                     os.chown("/var/log/systemd-mailify.log", uid, gid)
                     os.chmod("/var/log/systemd-mailify.log", 436)
                 except Exception as ex:
-                    journal.send("systemd-mailify: there is a problem chowning the log\
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+ message)
+                    journal.send("systemd-mailify: there is a problem chowning/chmoding the log\
                             file. Please check the unit file for the\
-                            CAP_CHOWN capability ")
+                            CAP_CHOWN/CAP_FOWNER capability ")
             else:
                 #create log file and chown/chmod
                 try:
-                    #open('/var/log/systemd-mailify.conf', 'w+')
                     with open('/var/log/systemd-mailify.log', 'a+') as f:
                         f.write()
                 except Exception as ex:
@@ -65,45 +64,30 @@ class LogReader(multiprocessing.Process):
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+ message)
                 try:
-                    chown = os.chown("/var/log/systemd-mailify.log", uid, gid)
-                    chm = os.chmod("/var/log/systemd-mailify.log", 436)
+                     os.chown("/var/log/systemd-mailify.log", uid, gid)
+                     os.chmod("/var/log/systemd-mailify.log", 436)
                 except Exception as ex:
-                    journal.send("systemd-mailify: there is a problem chowning the log\
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    journal.send("systemd-mailify: "+ message)
+                    journal.send("systemd-mailify: there is a problem chowning/chmoding the log\
                             file. Please check the unit file for the\
-                            CAP_CHOWN capability ")
+                            CAP_CHOWN/CAP_FOWNER capability ")
             self.logg = True
         else:
             #journal logging
             self.logg = False
-        print "inside __init__ self.logg == "+ str(self.logg)
-        journal.send("systemd-mailify: inside __init__ self.logg == "+\
-                str(self.logg))
-        #logger = logging.getLogger('systemd-mailify')
         log_level = conf.get("LOGGING", "log_level")
         str_to_num = {"ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30}
         for key, value in str_to_num.iteritems():
             if log_level == key:
                 self.logg_level = value
-                #self.logg_level = logging.key
         if log == "log_file" or log == "both":
-            #hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
-            #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
             formatter = '%(asctime)s %(levelname)s %(message)s'
-            #hdlr.setFormatter(formatter)
-            #logger.addHandler(hdlr)
-            #logger.setLevel(logging.ERROR)
-            logging.basicConfig(filename='/var/log/systemd-mailify.log',level=logging.DEBUG, format=formatter)
+            logging.basicConfig(filename='/var/log/systemd-mailify.log', level=self.logg_level, format=formatter)
             self.logging = logging
         else:
             self.logging = None
-
-        print "inside __init__ self.logg_level == "+ str(self.logg_level)
-        journal.send("systemd-mailify: inside __init__ self.logg_level == "+\
-                str(self.logg_level))
-
-        print "inside __init__ self.logging == "+ str(self.logging)
-        journal.send("systemd-mailify: inside __init__ self.logging == "+\
-                str(self.logging))
 
     def get_euid(self):
         """
@@ -112,11 +96,11 @@ class LogReader(multiprocessing.Process):
         return int
         """
         uid = os.geteuid()
-        pid = os.getpid()
-        #print "getting uid: "+ str(uid)
-        #print "getting pid: "+ str(pid)
-        #journal.send("systemd-mailify in get_euid: "+str(uid))
-        #journal.send("systemd-mailify pid in get_euid: "+str(pid))
+        ppid = os.getpid()
+        if self.logg == True and self.logg_facility == "log_file" and\
+        self.logg_level == 10:
+            self.logging.debug("Running inside get_euid: uid == "+str(uid))
+            self.logging.debug("Running inside get_euid: pid == "+str(ppid))
         return uid
 
     def set_euid(self, uid):
@@ -133,7 +117,7 @@ class LogReader(multiprocessing.Process):
             journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
             if self.logg == True:
-                self.logging.info('setting euid: '+ str(self.get_euid()))
+                self.logging.info('Running inside set_euid and trying to set effective uid: '+ str(self.get_euid()))
         else:
             if self.logg == True and self.logg_facility == "both":
                 self.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -165,7 +149,6 @@ class LogReader(multiprocessing.Process):
                 journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
             elif self.logg == True and self.logg_facility == "log_file":
                 self.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
-
             else:
                 journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 
@@ -182,7 +165,6 @@ class LogReader(multiprocessing.Process):
             template = "An exception of type {0} occured. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: Error getting uid from the username provided in the .conf")
-        #print "getting uid: "+ str(username_to_id)
         return username_to_id
 
 
@@ -211,7 +193,41 @@ class LogReader(multiprocessing.Process):
         auth = conf.getboolean("AUTH", "active")
         if auth and auth == True:
             auth_user = conf.get("AUTH", "auth_user")
+            if len(auth_user) == 0:
+                if self.logg == True and self.logg_facility == "both":
+                    self.logging.error("You have asked for authentication but\
+                            you have an empty auth_user name. Please update the\
+                            /etc/systemd-mailify.conf file with a value ")
+                    journal.send("systemd-mailify: ERROR You have asked for\
+                            authentication but you have an empty auth_user\
+                            name. Please update the /etc/systemd-mailify.conf file with a value ")
+                elif self.logg == True and self.logg_facility == "log_file":
+                    self.logging.error("You have asked for authentication but\
+                            you have an empty auth_user name. Please update the\
+                            /etc/systemd-mailify.conf file with a value ")
+                else:
+                    journal.send("systemd-mailify: ERROR You have asked for\
+                            authentication but you have an empty auth_user\
+                            name. Please update the /etc/systemd-mailify.conf file with a value ")
+            sys.exit(-1)
             auth_password = conf.get("AUTH", "auth_password")
+            if len(auth_password) == 0:
+                if self.logg == True and self.logg_facility == "both":
+                    self.logging.error("You have asked for authentication but\
+                            you have an empty auth_password field. Please update the\
+                            /etc/systemd-mailify.conf file with a value ")
+                    journal.send("systemd-mailify: ERROR You have asked for\
+                            authentication but you have an empty auth_password\
+                            field. Please update the /etc/systemd-mailify.conf file with a value ")
+                elif self.logg == True and self.logg_facility == "log_file":
+                    self.logging.error("You have asked for authentication but\
+                            you have an empty auth_password field. Please update the\
+                            /etc/systemd-mailify.conf file with a value ")
+                else:
+                    journal.send("systemd-mailify: ERROR You have asked for\
+                            authentication but you have an empty auth_password\
+                            field. Please update the /etc/systemd-mailify.conf file with a value ")
+            sys.exit(-1)
             conf_dict['auth'] = True
             conf_dict['auth_user'] = auth_user
             conf_dict['auth_password'] = auth_password
@@ -227,10 +243,49 @@ class LogReader(multiprocessing.Process):
         smtp_host = conf.get("SMTP", "host")
         if len(smtp_host) == 0:
             smtp_host = "localhost"
+            if self.logg == True and self.logg_facility == "both":
+                self.logging.info("You have asked for smtp connection but\
+                        you have an empty smtp host field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume localhost here")
+                journal.send("systemd-mailify: INFO You have asked for a smtp connection but\
+                        you have an empty smtp host \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume localhost here")
+            elif self.logg == True and self.logg_facility == "log_file":
+                self.logging.info("You have asked for smtp connection but\
+                        you have an empty smtp host field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume localhost here")
+            else:
+                journal.send("systemd-mailify: INFO You have asked for a smtp connection but\
+                        you have an empty smtp host \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume localhost here")
         conf_dict['smtp_host'] = smtp_host
         smtp_port = conf.getint("SMTP", "port")
         if not smtp_port:
             smtp_port = 25
+            if self.logg == True and self.logg_facility == "both":
+                self.logging.info("You have asked for smtp connection but\
+                        you have an empty smtp port field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume port 25 here")
+                journal.send("systemd-mailify: INFO You have asked for a smtp connection but\
+                        you have an empty smtp port \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume port 25 here")
+            elif self.logg == True and self.logg_facility == "log_file":
+                self.logging.info("You have asked for smtp connection but\
+                        you have an empty smtp port field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume port 25 here")
+            else:
+                journal.send("systemd-mailify: INFO You have asked for a smtp connection but\
+                        you have an empty smtp port  \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume port 25 here")
+
         conf_dict['smtp_port'] = smtp_port
 
         #parse [SMTPS]
@@ -240,10 +295,48 @@ class LogReader(multiprocessing.Process):
             smtps_host = conf.get("SMTPS", "host")
             if len(smtps_host) == 0:
                 smtps_host = "localhost"
+                if self.logg == True and self.logg_facility == "both":
+                    self.logging.info("You have asked for smtps connection but\
+                        you have an empty smtps host field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume localhost here")
+                    journal.send("systemd-mailify: INFO You have asked for a smtps connection but\
+                        you have an empty smtps host \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume localhost here")
+                elif self.logg == True and self.logg_facility == "log_file":
+                    self.logging.info("You have asked for smtps connection but\
+                        you have an empty smtps host field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume localhost here")
+                else:
+                    journal.send("systemd-mailify: INFO You have asked for a smtps connection but\
+                        you have an empty smtps host \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume localhost here")
             conf_dict['smtps_host'] = smtps_host
             smtps_port = conf.getint("SMTPS", "port")
             if not smtps_port:
                 smtps_port = 465
+                if self.logg == True and self.logg_facility == "both":
+                    self.logging.info("You have asked for smtps connection but\
+                        you have an empty smtps port field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume port 465 here")
+                    journal.send("systemd-mailify: INFO You have asked for a smtps connection but\
+                        you have an empty smtps port \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume port 465 here")
+                elif self.logg == True and self.logg_facility == "log_file":
+                    self.logging.info("You have asked for smtps connection but\
+                        you have an empty smtps port field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume port 465 here")
+                else:
+                    journal.send("systemd-mailify: INFO You have asked for a smtps connection but\
+                        you have an empty smtps port  \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume port 465 here")
             conf_dict['smtps_port'] = smtps_port
             smtps_cert = conf.get("SMTPS", "cert_file")
             conf_dict['smtps_cert'] = smtps_cert
@@ -259,10 +352,48 @@ class LogReader(multiprocessing.Process):
             starttls_host = conf.get("STARTTLS", "host")
             if len(starttls_host) == 0:
                 starttls_host = "localhost"
+                if self.logg == True and self.logg_facility == "both":
+                    self.logging.info("You have asked for starttls connection but\
+                        you have an empty starttls_host field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume localhost here")
+                    journal.send("systemd-mailify: INFO You have asked for a starttls connection but\
+                        you have an empty starttls_host \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume localhost here")
+                elif self.logg == True and self.logg_facility == "log_file":
+                    self.logging.info("You have asked for starttls connection but\
+                        you have an empty starttls_host field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume localhost here")
+                else:
+                    journal.send("systemd-mailify: INFO You have asked for a starttls connection but\
+                        you have an empty starttls_host \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume localhost here")
             conf_dict['starttls_host'] = starttls_host
             starttls_port = conf.getint("STARTTLS", "port")
             if not starttls_port:
                 starttls_port = 587
+                if self.logg == True and self.logg_facility == "both":
+                    self.logging.info("You have asked for starttls connection but\
+                        you have an empty starttls_port field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume port 587 here")
+                    journal.send("systemd-mailify: INFO You have asked for a starttls connection but\
+                        you have an empty starttls_port \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume port 587 here")
+                elif self.logg == True and self.logg_facility == "log_file":
+                    self.logging.info("You have asked for starttls connection but\
+                        you have an empty starttls_port field. Please update the\
+                        /etc/systemd-mailify.conf file with a value.\
+                        We assume port 587 here")
+                else:
+                    journal.send("systemd-mailify: INFO You have asked for a starttls connection but\
+                        you have an empty starttls_port  \
+                        field. Please update the /etc/systemd-mailify.conf file with a value\
+                        We assume port 587 here")
             conf_dict['starttls_port'] = starttls_port
             starttls_cert = conf.get("STARTTLS", "cert_file")
             conf_dict['starttls_cert'] = starttls_cert
@@ -271,15 +402,18 @@ class LogReader(multiprocessing.Process):
         else:
             conf_dict['starttls'] = False
         #iter through dict sections and check whether there are empty values
-        #for key, val in conf_dict.iteritems():
-        #    journal.send("systemd-mailify: ###dictionary###: key == " + str(key)+ " value == "+ str(val))
+        if self.logg == True and self.logg_facility == "log_file" and\
+        self.logg_level == 10:
+            for key, val in conf_dict.iteritems():
+                self.logging.debug("config_file: entry == " + str(key)+ " value == "+ str(val))
         return conf_dict
 
 
     def mail_worker(self, stri, que, dictio):
 
-        print 'In mail_worker()'
-        journal.send('systemd-mailify: In mail_worker()')
+        if self.logg == True and self.logg_facility == "log_file" and\
+        self.logg_level == 10:
+            self.logging.debug('Running inside mail_worker()')
         dictionary = dictio
         msg = MIMEMultipart("alternative")
         #get it from the queue?
@@ -480,19 +614,20 @@ class LogReader(multiprocessing.Process):
         :desc: function that goes on an infinite loop polling the systemd-journal for failed services
         Helpful API->http://www.freedesktop.org/software/systemd/python-systemd/
         """
-        #first as root execute logger function to create
-        #/var/log/systemd-mailify.log
-        # then do setuid, setgid voodo magic
+        # do setuid, setgid voodo magic
 
-        print "inside run()"
-        journal.send("systemd-mailify:"+"inside run()")
+        if self.logg == True and self.logg_facility == "log_file" and\
+        self.logg_level == 10:
+            self.logging.debug('Running inside run()')
         dictionary = self.parse_config()
         username = dictionary["user"]
         uid = self.get_conf_userid(username)
         self.set_egid()
         self.set_euid(uid)
         queue = Queue()
-        journal.send("systemd-mailify:"+"inside run() init Queue"+ str(queue))
+        if self.logg == True and self.logg_facility == "log_file" and\
+        self.logg_level == 10:
+            self.logging.debug('Running inside run()'+'init Queue object'+ str(queue))
         try:
             j_reader = journal.Reader()
         except Exception as ex:
@@ -515,9 +650,12 @@ class LogReader(multiprocessing.Process):
             journal.send("systemd-mailify: "+messa)
         while poller.poll():
             #next is a debugging call
-            # if it prints True it is pollable
-            #reliable = j.reliable_fd()
-            #print reliable
+            # if it logs True it is pollable
+            if self.logg == True and self.logg_facility == "log_file" and\
+            self.logg_level == 10:
+                reliable = j_reader.reliable_fd()
+                self.logging.debug('Running inside run() '+' poller.poll()'+\
+                        str(reliable))
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting == 1 or waiting == 2:
@@ -529,18 +667,28 @@ class LogReader(multiprocessing.Process):
                             string = entry['MESSAGE']
                             if string and pattern in string:
                                 journal.send("systemd-mailify: caught pattern "+string)
-                                #queue.put(string)
-                                #http://pymotw.com/2/smtplib/
                                 worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
                                 worker.start()
                                 worker.join()
                                 q_list = queue.get()
                                 if q_list[1] == "SUCCESS":
-                                    journal.send("systemd-mailify:" " at "+str(q_list[0])+" delivered mail with content: " + string)
+                                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                        self.logging.info(" at "+str(q_list[0])+" delivered mail with content: " + string)
+                                        journal.send("systemd-mailify: at "+str(q_list[0])+" delivered mail with content: " + string)
+                                    else:
+                                        journal.send("systemd-mailify: at "+str(q_list[0])+" delivered mail with content: " + string)
                                 elif q_list[1] == "FAILURE":
-                                    journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                        self.logging.info(" at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                        journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                    else:
+                                        journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                 else:
-                                    journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
+                                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                        self.logging.info(" failed to deliver mail with content " + string)
+                                        journal.send("systemd-mailify: failed to deliver mail with content: " + string)
+                                    else:
+                                        journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
 
                             else:
                                 continue
@@ -571,18 +719,24 @@ if __name__ == "__main__":
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
         journal.send("systemd-mailify: "+message)
+        journal.send("systemd-mailify: ERROR"+" Could not parse\
+                /etc/systemd-mailify.conf. Exiting...")
     try:
         config.read('/etc/systemd-mailify.conf')
     except Exception as ex:
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
         journal.send("systemd-mailify: "+message)
+        journal.send("systemd-mailify: ERROR"+" Could not read\
+                /etc/systemd-mailify.conf. Exiting...")
     try:
         config_logreader_start = config.getboolean("SYSTEMD-MAILIFY", "start")
     except Exception as ex:
         template = "An exception of type {0} occured. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
         journal.send("systemd-mailify: "+message)
+        journal.send("systemd-mailify: ERROR"+" Could not read\
+                /etc/systemd-mailify.conf [SYSTEMD-MAILIFY] start value. Exiting...")
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
         lg = LogReader()
@@ -594,5 +748,7 @@ if __name__ == "__main__":
             templated = "An exception of type {0} occured. Arguments:\n{1!r}"
             messaged = templated.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messaged)
+            if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
+                lg.logging.error(message)
         finally:
             lg.run()
