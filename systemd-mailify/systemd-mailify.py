@@ -92,7 +92,7 @@ class LogReader(multiprocessing.Process):
             #hdlr.setFormatter(formatter)
             #logger.addHandler(hdlr)
             #logger.setLevel(logging.ERROR)
-            logging.basicConfig(logfile='/var/log/systemd-mailify.log',level=self.logg_level, format=formatter)
+            logging.basicConfig(filename='/var/log/systemd-mailify.log',level=logging.DEBUG, format=formatter)
             self.logging = logging
         else:
             self.logging = None
@@ -156,7 +156,9 @@ class LogReader(multiprocessing.Process):
         gid = os.setegid(egid)
         if gid == None:
             if self.logg == True:
-                self.logging.info('setting gid: '+ str(self.get_egid()))
+                try:
+                    self.logging.info('setting gid: '+ str(self.get_egid()))
+                except 
             else:
                 pass
         else:
