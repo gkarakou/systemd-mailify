@@ -666,7 +666,10 @@ class LogReader(multiprocessing.Process):
                         try:
                             string = entry['MESSAGE']
                             if string and pattern in string:
-                                journal.send("systemd-mailify: caught pattern "+string)
+                                if self.logg == True and self.logg_facility == "log_file" and\
+                                self.logg_level == 10:
+                                    self.logging.debug("Running inside run() I\
+                                            caught a pattern "+string)
                                 worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
                                 worker.start()
                                 worker.join()
