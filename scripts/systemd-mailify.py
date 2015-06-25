@@ -78,29 +78,32 @@ class LogReader(multiprocessing.Process):
         print "inside __init__ self.logg == "+ str(self.logg)
         journal.send("systemd-mailify: inside __init__ self.logg == "+\
                 str(self.logg))
-        logger = logging.getLogger('systemd-mailify')
+        #logger = logging.getLogger('systemd-mailify')
         log_level = conf.get("LOGGING", "log_level")
         str_to_num = {"ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30}
         for key, value in str_to_num.iteritems():
             if log_level == key:
                 self.logg_level = value
+                #self.logg_level = logging.key
         if log == "log_file" or log == "both":
-            hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
-            formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-            hdlr.setFormatter(formatter)
-            logger.addHandler(hdlr)
-            logger.setLevel(self.logg_level)
-            self.logger = logger
+            #hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
+            #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+            formatter = '%(asctime)s %(levelname)s %(message)s'
+            #hdlr.setFormatter(formatter)
+            #logger.addHandler(hdlr)
+            #logger.setLevel(logging.ERROR)
+            logging.basicConfig(filename='/var/log/systemd-mailify.log',level=logging.DEBUG, format=formatter)
+            self.logging = logging
         else:
-            self.logger = None
+            self.logging = None
 
         print "inside __init__ self.logg_level == "+ str(self.logg_level)
         journal.send("systemd-mailify: inside __init__ self.logg_level == "+\
                 str(self.logg_level))
 
-        print "inside __init__ self.logger == "+ str(self.logger)
-        journal.send("systemd-mailify: inside __init__ self.logger == "+\
-                str(self.logger))
+        print "inside __init__ self.logging == "+ str(self.logging)
+        journal.send("systemd-mailify: inside __init__ self.logging == "+\
+                str(self.logging))
 
     def get_euid(self):
         """
@@ -130,13 +133,13 @@ class LogReader(multiprocessing.Process):
             journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
             if self.logg == True:
-                self.logger.info('setting euid: '+ str(self.get_euid()))
+                self.logging.info('setting euid: '+ str(self.get_euid()))
         else:
             if self.logg == True and self.logg_facility == "both":
-                self.logger.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+                self.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
                 journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
             elif self.logg == True and self.logg_facility == "log_file":
-                self.logger.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+                self.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
 
             else:
                 journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -153,15 +156,15 @@ class LogReader(multiprocessing.Process):
         gid = os.setegid(egid)
         if gid == None:
             if self.logg == True:
-                self.logger.info('setting gid: '+ str(self.get_egid()))
+                self.logging.info('setting gid: '+ str(self.get_egid()))
             else:
                 pass
         else:
             if self.logg == True and self.logg_facility == "both":
-                self.logger.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
+                self.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
                 journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
             elif self.logg == True and self.logg_facility == "log_file":
-                self.logger.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
+                self.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 
             else:
                 journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
@@ -302,10 +305,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -325,10 +326,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logging.error(message)
                 finally:
                      s.quit()
                      del s
@@ -360,10 +359,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -393,10 +390,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -433,10 +428,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -471,10 +464,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                   # if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                   #     self.logger.error(message)
-                   # else:
-                   #     journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -557,10 +548,8 @@ class LogReader(multiprocessing.Process):
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
                             journal.send("systemd-mailify: "+message)
-                            #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                            #    self.logger.error(message)
-                            #else:
-                            #    journal.send("systemd-mailify: "+message)
+                            if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                self.logging.error(message)
                     else:
                         continue
            #back to normal journal reading
