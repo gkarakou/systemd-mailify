@@ -267,24 +267,24 @@ class LogReader(multiprocessing.Process):
         if not smtp_port:
             smtp_port = 25
             if self.logg == True and self.logg_facility == "both":
-                self.logging.info("You have asked for smtp connection but\
+                self.logging.error("You have asked for smtp connection but\
                         you have an empty smtp port field. Please update the\
                         /etc/systemd-mailify.conf file with a value.\
-                        We assume port 25 here")
-                journal.send("systemd-mailify: INFO You have asked for a smtp connection but\
+                        it must be port=25 here")
+                journal.send("systemd-mailify: ERROR You have asked for a smtp connection but\
                         you have an empty smtp port \
-                        field. Please update the /etc/systemd-mailify.conf file with a value\
-                        We assume port 25 here")
+                        field. Please update the /etc/systemd-mailify.conf file with a value.\
+                        it must be port=25 here")
             elif self.logg == True and self.logg_facility == "log_file":
-                self.logging.info("You have asked for smtp connection but\
+                self.logging.error("You have asked for smtp connection but\
                         you have an empty smtp port field. Please update the\
                         /etc/systemd-mailify.conf file with a value.\
-                        We assume port 25 here")
+                        It must be port=25")
             else:
-                journal.send("systemd-mailify: INFO You have asked for a smtp connection but\
+                journal.send("systemd-mailify: ERROR You have asked for a smtp connection but\
                         you have an empty smtp port  \
-                        field. Please update the /etc/systemd-mailify.conf file with a value\
-                        We assume port 25 here")
+                        field. Please update the /etc/systemd-mailify.conf file with a value.\
+                        It must be port=25 ")
 
         conf_dict['smtp_port'] = smtp_port
 
@@ -319,24 +319,24 @@ class LogReader(multiprocessing.Process):
             if not smtps_port:
                 smtps_port = 465
                 if self.logg == True and self.logg_facility == "both":
-                    self.logging.info("You have asked for smtps connection but\
+                    self.logging.error("You have asked for smtps connection but\
                         you have an empty smtps port field. Please update the\
                         /etc/systemd-mailify.conf file with a value.\
-                        We assume port 465 here")
-                    journal.send("systemd-mailify: INFO You have asked for a smtps connection but\
+                        port=465 ")
+                    journal.send("systemd-mailify: ERROR You have asked for a smtps connection but\
                         you have an empty smtps port \
-                        field. Please update the /etc/systemd-mailify.conf file with a value\
-                        We assume port 465 here")
+                        field. Please update the /etc/systemd-mailify.conf file with a value.\
+                        port=465")
                 elif self.logg == True and self.logg_facility == "log_file":
-                    self.logging.info("You have asked for smtps connection but\
+                    self.logging.error("You have asked for smtps connection but\
                         you have an empty smtps port field. Please update the\
                         /etc/systemd-mailify.conf file with a value.\
-                        We assume port 465 here")
+                        port=465")
                 else:
-                    journal.send("systemd-mailify: INFO You have asked for a smtps connection but\
+                    journal.send("systemd-mailify: ERROR You have asked for a smtps connection but\
                         you have an empty smtps port  \
-                        field. Please update the /etc/systemd-mailify.conf file with a value\
-                        We assume port 465 here")
+                        field. Please update the /etc/systemd-mailify.conf file with a value.\
+                         port=465 ")
             conf_dict['smtps_port'] = smtps_port
             smtps_cert = conf.get("SMTPS", "cert_file")
             conf_dict['smtps_cert'] = smtps_cert
@@ -376,24 +376,24 @@ class LogReader(multiprocessing.Process):
             if not starttls_port:
                 starttls_port = 587
                 if self.logg == True and self.logg_facility == "both":
-                    self.logging.info("You have asked for starttls connection but\
-                        you have an empty starttls_port field. Please update the\
+                    self.logging.error("You have asked for starttls connection but\
+                        you have an empty starttls port field. Please update the\
                         /etc/systemd-mailify.conf file with a value.\
-                        We assume port 587 here")
-                    journal.send("systemd-mailify: INFO You have asked for a starttls connection but\
-                        you have an empty starttls_port \
-                        field. Please update the /etc/systemd-mailify.conf file with a value\
-                        We assume port 587 here")
+                        port=587")
+                    journal.send("systemd-mailify: ERROR You have asked for a starttls connection but\
+                        you have an empty starttls port \
+                        field. Please update the /etc/systemd-mailify.conf file with a value.\
+                        port=587")
                 elif self.logg == True and self.logg_facility == "log_file":
-                    self.logging.info("You have asked for starttls connection but\
-                        you have an empty starttls_port field. Please update the\
+                    self.logging.error("You have asked for starttls connection but\
+                        you have an empty starttls port field. Please update the\
                         /etc/systemd-mailify.conf file with a value.\
-                        We assume port 587 here")
+                        port=587 ")
                 else:
-                    journal.send("systemd-mailify: INFO You have asked for a starttls connection but\
-                        you have an empty starttls_port  \
-                        field. Please update the /etc/systemd-mailify.conf file with a value\
-                        We assume port 587 here")
+                    journal.send("systemd-mailify: ERROR You have asked for a starttls connection but\
+                        you have an empty starttls port  \
+                        field. Please update the /etc/systemd-mailify.conf file with a value.\
+                        port= 587")
             conf_dict['starttls_port'] = starttls_port
             starttls_cert = conf.get("STARTTLS", "cert_file")
             conf_dict['starttls_cert'] = starttls_cert
