@@ -302,10 +302,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logger.error(message)
                 finally:
                     s.quit()
                     del s
@@ -325,10 +323,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logger.error(message)
                 finally:
                      s.quit()
                      del s
@@ -360,10 +356,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logger.error(message)
                 finally:
                     s.quit()
                     del s
@@ -393,10 +387,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logger.error(message)
                 finally:
                     s.quit()
                     del s
@@ -433,10 +425,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                    #    self.logger.error(message)
-                    #else:
-                    #    journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logger.error(message)
                 finally:
                     s.quit()
                     del s
@@ -471,10 +461,8 @@ class LogReader(multiprocessing.Process):
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                   # if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                   #     self.logger.error(message)
-                   # else:
-                   #     journal.send("systemd-mailify: "+message)
+                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                        self.logger.error(message)
                 finally:
                     s.quit()
                     del s
@@ -557,10 +545,8 @@ class LogReader(multiprocessing.Process):
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
                             journal.send("systemd-mailify: "+message)
-                            #if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                            #    self.logger.error(message)
-                            #else:
-                            #    journal.send("systemd-mailify: "+message)
+                            if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                self.logger.error(message)
                     else:
                         continue
            #back to normal journal reading
