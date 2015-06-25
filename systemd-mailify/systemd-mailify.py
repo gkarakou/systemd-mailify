@@ -136,7 +136,7 @@ class LogReader(multiprocessing.Process):
         gid = os.setegid(egid)
         if gid == None:
             if self.logg == True:
-                self.logging.info('setting gid: '+ str(self.get_egid()))
+                self.logging.debug('setting gid: '+ str(self.get_egid()))
             else:
                 pass
         else:
