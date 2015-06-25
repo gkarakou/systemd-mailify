@@ -113,7 +113,7 @@ class LogReader(multiprocessing.Process):
             journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
             if self.logg == True:
-                self.logging.info('Running inside set_euid and trying to set effective uid: '+ str(self.get_euid()))
+                self.logging.debug('Running inside set_euid and trying to set effective uid: '+ str(self.get_euid()))
         else:
             if self.logg == True and self.logg_facility == "both":
                 self.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -562,8 +562,7 @@ class LogReader(multiprocessing.Process):
             if self.logg == True and self.logg_facility == "log_file" and\
             self.logg_level == 10:
                 reliable = j_reader.reliable_fd()
-                self.logging.debug('Running inside run() '+' poller.poll()'+\
-                        str(reliable))
+                self.logging.debug('Running inside run() '+' poller.poll()'+ str(reliable))
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting == 1 or waiting == 2:
@@ -576,8 +575,7 @@ class LogReader(multiprocessing.Process):
                             if string and pattern in string:
                                 if self.logg == True and self.logg_facility == "log_file" and\
                                 self.logg_level == 10:
-                                    self.logging.debug("Running inside run() I\
-                                            caught a pattern "+string)
+                                    self.logging.debug("Running inside run() I caught a pattern "+string)
                                 worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
                                 worker.start()
                                 worker.join()
