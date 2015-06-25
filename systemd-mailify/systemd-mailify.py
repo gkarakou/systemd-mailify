@@ -84,12 +84,13 @@ class LogReader(multiprocessing.Process):
         for key, value in str_to_num.iteritems():
             if log_level == key:
                 self.logg_level = value
+                #self.logg_level = logging.key
         if log == "log_file" or log == "both":
             hdlr = logging.FileHandler('/var/log/systemd-mailify.log')
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
-            logger.setLevel(logging+"."+self.logg_level)
+            logger.setLevel(logging.ERROR)
             self.logger = logger
         else:
             self.logger = None
