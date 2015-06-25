@@ -499,6 +499,7 @@ class LogReader(multiprocessing.Process):
         username = dictionary["user"]
         uid = self.get_conf_userid(username)
         self.set_euid(uid)
+        self.set_egid()
         queue = Queue()
         journal.send("systemd-mailify:"+"inside run() init Queue"+ str(queue))
         try:
