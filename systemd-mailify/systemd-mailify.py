@@ -197,7 +197,7 @@ class LogReader(multiprocessing.Process):
                     self.logging.error("You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
                 else:
                     journal.send("systemd-mailify: ERROR You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
-            sys.exit(-1)
+            sys.exit(1)
             auth_password = conf.get("AUTH", "auth_password")
             if len(auth_password) == 0:
                 if self.logg == True and self.logg_facility == "both":
@@ -207,7 +207,7 @@ class LogReader(multiprocessing.Process):
                     self.logging.error("You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
                 else:
                     journal.send("systemd-mailify: ERROR You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
-            sys.exit(-1)
+            sys.exit(1)
             conf_dict['auth'] = True
             conf_dict['auth_user'] = auth_user
             conf_dict['auth_password'] = auth_password
