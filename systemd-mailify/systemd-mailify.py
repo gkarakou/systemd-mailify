@@ -27,6 +27,13 @@ class LogReader(multiprocessing.Process):
     """
 
     def __init__(self):
+        """
+        __init__
+        :desc: constructor method
+        Calls parent and then reads .conf for the global session
+        Creates and chowns/chmods the log file if log_file is enabled
+        Creates some members to be used in the instance about logging
+        """
         super(LogReader, self).__init__()
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
@@ -100,9 +107,11 @@ class LogReader(multiprocessing.Process):
         return uid
 
     def set_euid(self, uid):
-        """set_euid
-        return int
-        :param *args:
+        """
+        set_euid
+        :desc : Function that sets effective user id
+        return void
+        :param uid int:
         """
         euid = int(uid)
         try:
@@ -128,10 +137,21 @@ class LogReader(multiprocessing.Process):
 
 
     def get_egid(self):
+        """
+        get_egid_
+        :desc : Function that returns effective gid as int
+        return int
+        """
         gid = os.getgid()
         return gid
 
     def set_egid(self):
+        """
+        set_egid
+        :desc : Function that sets effective gid to systemd-journal groups id
+        return void
+        """
+
         egid = 190
         gid = os.setegid(egid)
         if gid == None:
@@ -165,6 +185,12 @@ class LogReader(multiprocessing.Process):
 
 
     def parse_config(self):
+        """
+        parse_config
+        :desc : Function that returns a dictionary containing all the values
+        from the /etc/systemd-mailify.conf file (minus the global section)
+        return dict
+        """
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
 
@@ -318,6 +344,13 @@ class LogReader(multiprocessing.Process):
 
 
     def mail_worker(self, stri, que, dictio):
+        """
+        mail_worker
+        :desc : Function that does the heavy lifting
+        :params : The string to be mailed, a queue object to put messages in it
+        to notify the parent process about the status of the mail, and a dict
+        containing config options necessary for the mail to be delivered.
+        """
 
         if self.logg == True and self.logg_facility == "log_file" and\
         self.logg_level == 10:
@@ -619,7 +652,7 @@ if __name__ == "__main__":
     """
     __main__
     :desc: Somewhat main function though we are linux only
-    based on user configuration starts classes
+    based on user configuration starts the class
     """
 
     try:
