@@ -693,4 +693,6 @@ if __name__ == "__main__":
             if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
                 lg.logging.error(message)
         finally:
+            if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
+                lg.logging.info("systemd-mailify started")
             lg.run()
