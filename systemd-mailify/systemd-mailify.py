@@ -142,8 +142,8 @@ class LogReader(multiprocessing.Process):
         :desc : Function that returns effective gid as int
         return int
         """
-        gid = os.getgid()
-        return gid
+        egid = os.getegid()
+        return egid
 
     def set_egid(self):
         """
