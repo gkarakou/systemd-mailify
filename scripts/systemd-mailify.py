@@ -98,13 +98,13 @@ class LogReader(multiprocessing.Process):
         :desc : Function that returns effective user id as int
         return int
         """
-        uid = os.geteuid()
+        euid = os.geteuid()
         ppid = os.getpid()
         if self.logg == True and self.logg_facility == "log_file" and\
         self.logg_level == 10:
-            self.logging.debug("Running inside get_euid: uid == "+str(uid))
-            self.logging.debug("Running inside get_euid: pid == "+str(ppid))
-        return uid
+            self.logging.debug("Running inside get_euid(): euid == "+str(euid))
+            self.logging.debug("Running inside get_euid(): pid == "+str(ppid))
+        return euid
 
     def set_euid(self, uid):
         """
@@ -122,7 +122,7 @@ class LogReader(multiprocessing.Process):
             journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
             if self.logg == True:
-                self.logging.debug('Running inside set_euid and trying to set effective uid: '+ str(self.get_euid()))
+                self.logging.debug('Running inside set_euid() and trying to set effective uid: '+ str(self.get_euid()))
         else:
             if self.logg == True and self.logg_facility == "both":
                 self.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -143,6 +143,9 @@ class LogReader(multiprocessing.Process):
         return int
         """
         egid = os.getegid()
+        if self.logg == True and self.logg_facility == "log_file" and\
+        self.logg_level == 10:
+            self.logging.debug("Running inside get_egid(): egid == "+str(egid))
         return egid
 
     def set_egid(self):
@@ -156,7 +159,7 @@ class LogReader(multiprocessing.Process):
         gid = os.setegid(egid)
         if gid == None:
             if self.logg == True:
-                self.logging.debug('setting gid=190 to the process: '+ str(self.get_egid()))
+                self.logging.debug('Running inside set_egid() trying to egid=190 to the process: '+ str(self.get_egid()))
             else:
                 pass
         else:
