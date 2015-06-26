@@ -376,9 +376,9 @@ class LogReader(multiprocessing.Process):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                     if isinstance(send, dict):
-                        que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                        que.put([self.name, "SUCCESS"])
                     else:
-                        que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                        que.put([self.name, "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -397,9 +397,9 @@ class LogReader(multiprocessing.Process):
                 try:
                     send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string().strip())
                     if isinstance(send, dict):
-                        que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                        que.put([self.name, "SUCCESS"])
                     else:
-                        que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                        que.put([self.name, "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -421,18 +421,17 @@ class LogReader(multiprocessing.Process):
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                            que.put([self.name, "SUCCESS"])
                         else:
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                            que.put([self.name, "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                            que.put([self.name, "SUCCESS"])
                         else:
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d\
-                                %H:%M:%S"), "FAILURE"])
+                            que.put([self.name, "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -452,18 +451,18 @@ class LogReader(multiprocessing.Process):
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                            que.put([self.name, "SUCCESS"])
                         else:
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                            que.put([self.name, "FAILURE"])
                     else:
                         s = smtplib.SMTP_SSL(host=str(dictionary['smtps_host']), port=dictionary['smtps_port'])
                         s.ehlo_or_helo_if_needed()
                         s.login(dictionary['auth_user'], dictionary['auth_password'])
                         send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                         if isinstance(send, dict):
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                            que.put([self.name, "SUCCESS"])
                         else:
-                            que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                            que.put([self.name, "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -491,17 +490,17 @@ class LogReader(multiprocessing.Process):
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                                que.put([self.name, "SUCCESS"])
                             else:
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                                que.put([self.name, "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                                que.put([self.name, "SUCCESS"])
                             else:
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                                que.put([self.name, "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -526,18 +525,18 @@ class LogReader(multiprocessing.Process):
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                                que.put([self.name, "SUCCESS"])
                             else:
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                                que.put([self.name, "FAILURE"])
                         else:
                             s.starttls()
                             s.ehlo()
                             s.login(str(dictionary['auth_user']).strip(), str(dictionary['auth_password']))
                             send = s.sendmail(str(dictionary['email_from']), [str(dictionary['email_to'])], msg.as_string())
                             if isinstance(send, dict):
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "SUCCESS"])
+                                que.put([self.name, "SUCCESS"])
                             else:
-                                que.put([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "FAILURE"])
+                                que.put([self.name, "FAILURE"])
                 except Exception as ex:
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
@@ -618,22 +617,22 @@ class LogReader(multiprocessing.Process):
                                 q_list = queue.get()
                                 if q_list[1] == "SUCCESS":
                                     if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                        self.logging.info(" at "+str(q_list[0])+" delivered mail with content: " + string)
-                                        journal.send("systemd-mailify: at "+str(q_list[0])+" delivered mail with content: " + string)
+                                        self.logging.info(" Thread "+str(q_list[0])+" delivered mail with content: " + string)
+                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
                                     else:
-                                        journal.send("systemd-mailify: at "+str(q_list[0])+" delivered mail with content: " + string)
+                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
                                 elif q_list[1] == "FAILURE":
                                     if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
                                         self.logging.info(" at "+str(q_list[0])+" failed to deliver mail with content: " + string)
-                                        journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                     else:
-                                        journal.send("systemd-mailify:" " at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                 else:
                                     if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
                                         self.logging.info(" failed to deliver mail with content " + string)
                                         journal.send("systemd-mailify: failed to deliver mail with content: " + string)
                                     else:
-                                        journal.send("systemd-mailify:"+" failed to deliver mail with content " + string)
+                                        journal.send("systemd-mailify: failed to deliver mail with content " + string)
 
                             else:
                                 continue
