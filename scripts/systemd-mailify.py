@@ -568,7 +568,7 @@ class LogReader(multiprocessing.Process):
         queue = Queue()
         if self.logg == True and self.logg_facility == "log_file" and\
         self.logg_level == 10:
-            self.logging.debug('Running inside run()'+'init Queue object'+ str(queue))
+            self.logging.debug('Running inside run() '+' is there an init Queue object? '+ str(queue))
         try:
             j_reader = journal.Reader()
         except Exception as ex:
@@ -595,7 +595,7 @@ class LogReader(multiprocessing.Process):
             if self.logg == True and self.logg_facility == "log_file" and\
             self.logg_level == 10:
                 reliable = j_reader.reliable_fd()
-                self.logging.debug('Running inside run() '+' poller.poll()'+ str(reliable))
+                self.logging.debug('Running inside run() '+' poller.poll() and determining whether we a reliable file descriptor to the journal file : '+ str(reliable))
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting == 1 or waiting == 2:
@@ -608,7 +608,7 @@ class LogReader(multiprocessing.Process):
                             if string and pattern in string:
                                 if self.logg == True and self.logg_facility == "log_file" and\
                                 self.logg_level == 10:
-                                    self.logging.debug("Running inside run() I caught a pattern "+string)
+                                    self.logging.debug("Running inside run() I caught a pattern: "+string)
                                 worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
                                 worker.start()
                                 worker.join()
@@ -693,4 +693,6 @@ if __name__ == "__main__":
             if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
                 lg.logging.error(message)
         finally:
+            if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
+                lg.logging.info("systemd-mailify started")
             lg.run()
