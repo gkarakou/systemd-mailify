@@ -594,10 +594,10 @@ class LogReader(multiprocessing.Process):
         while poller.poll():
             #next is a debugging call
             # if it logs True it is pollable
-            if self.logg == True and self.logg_facility == "log_file" and\
-            self.logg_level == 10:
-                reliable = j_reader.reliable_fd()
-                self.logging.debug('Running inside run method I called poller.poll() and try now to determine whether we have a reliable file descriptor to the journal file : '+ str(reliable))
+            #if self.logg == True and self.logg_facility == "log_file" and\
+            #self.logg_level == 10:
+            #    reliable = j_reader.reliable_fd()
+            #    self.logging.debug('Running inside run method I called poller.poll() and try now to determine whether we have a reliable file descriptor to the journal file : '+ str(reliable))
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting == 1 or waiting == 2:
