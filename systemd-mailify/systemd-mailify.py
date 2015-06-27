@@ -698,5 +698,5 @@ if __name__ == "__main__":
         finally:
             if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
                 lg.logging.info("systemd-mailify started")
-            daemon.notify(status="READY=1",unset_environment=False)
+            daemon.notify(status="READY=1", unset_environment=False)
             lg.run()

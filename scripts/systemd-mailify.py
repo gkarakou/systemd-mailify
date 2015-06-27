@@ -1,11 +1,12 @@
 #!/usr/bin/python2
 #encoding=utf-8
-import datetime
+from datetime import datetime
 import select
 from systemd import journal
+from systemd import daemon
 from Queue import Queue
 from threading import Thread
-import multiprocessing
+from multiprocessing import Process
 import ConfigParser
 import smtplib
 import email.utils
@@ -17,7 +18,7 @@ from email.mime.text import MIMEText
 import logging
 
 
-class LogReader(multiprocessing.Process):
+class LogReader(Process):
     """
     LogReader
     :desc: Class that mails a user for failed systemd services
@@ -583,7 +584,7 @@ class LogReader(multiprocessing.Process):
         # it is questionable whether there is actually a record with the real
         # datetime we provide but we assume it moves the cursor to somewhere
         # near the end of the journal fd
-        j_reader.seek_realtime(datetime.datetime.now())
+        j_reader.seek_realtime(datetime.now())
         poller = select.poll()
         try:
             poller.register(j_reader, j_reader.get_events())
@@ -697,4 +698,5 @@ if __name__ == "__main__":
         finally:
             if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
                 lg.logging.info("systemd-mailify started")
+            daemon.notify(status="READY=1", unset_environment=False)
             lg.run()

@@ -1,14 +1,15 @@
 [Unit]
- Description=systemd-mailify service
+ Description=systemd-mailify Service
  ConditionFileNotEmpty=/etc/systemd-mailify.conf
  DefaultDependencies=no
  After=systemd-journald.service
  BindsTo=systemd-journald.service
 [Service]
- Type=simple
+ Type=notify
  PIDFile=/var/run/systemd-mailify.pid
  ExecStart=/usr/bin/systemd-mailify.py
  ExecStop=/bin/killall /usr/bin/systemd-mailify.py
  CapabilityBoundingSet= CAP_SETUID CAP_SETGID CAP_CHOWN CAP_FOWNER
+ KillMode=control-group
 [Install]
  WantedBy=multi-user.target
