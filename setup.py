@@ -29,7 +29,7 @@ setup(
 name = 'systemd-mailify',
 version = '1.1',
 description = 'Provides mailing notifications for failed systemd services',
-long_description = 'A python based service that mail-ifies failed systemd services',
+long_description = 'A python based service that mail-ifies on failed systemd services and on specific phrases found in the journal',
 author = 'George Karakougioumtzis <gkarakou>',
 author_email = 'gkarakou@gmail.com',
 url = 'https://github.com/gkarakou/systemd-mailify',
