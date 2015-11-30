@@ -197,10 +197,13 @@ class LogReader(Process):
         """
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
-
+        conf_dict = {}
+        #parse patterns section
+        conf_dict['conf_pattern_matcher_start'] = conf.getboolean("JournalPatternMatcher", "start")
+        conf_dict['conf_pattern_patts'] = conf.get("JournalPatternMatcher", "patterns")
+        conf_dict['conf_pattern_patterns'] = conf_dict['conf_pattern_patts'].split(",")
         #parse [EMAIL]
 
-        conf_dict = {}
         user = conf.get("SYSTEMD-MAILIFY", "user")
         if len(user) == 0:
             user = "root"
@@ -564,6 +567,11 @@ class LogReader(Process):
         self.logg_level == 10:
             self.logging.debug('Running inside run()')
         dictionary = self.parse_config()
+        patterns = []
+        if isinstance(dictionary['conf_pattern_matcher_start'], bool) and  dictionary['conf_pattern_matcher_start'] == True:
+            for p in dictionary['conf_pattern_patterns']:
+                patterns.append(p)
+        patterns.append("entered failed state")
         username = dictionary["user"]
         uid = self.get_conf_userid(username)
         self.set_egid()
@@ -605,44 +613,42 @@ class LogReader(Process):
                 j_reader.get_next()
                 for entry in j_reader:
                     if 'MESSAGE' in entry:
-                        pattern = "entered failed state"
-                        try:
-                            string = entry['MESSAGE']
-                            if string and pattern in string:
-                                if self.logg == True and self.logg_facility == "log_file" and\
-                                self.logg_level == 10:
-                                    self.logging.debug("Running inside run() I caught a pattern: "+string)
-                                worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
-                                worker.start()
-                                worker.join()
-                                q_list = queue.get()
-                                if q_list[1] == "SUCCESS":
-                                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                        self.logging.info(" Thread "+str(q_list[0])+" delivered mail with content: " + string)
-                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
+                        for pattern in patterns:
+                            try:
+                                string = entry['MESSAGE']
+                                if string and pattern in string:
+                                    if self.logg == True and self.logg_facility == "log_file" and self.logg_level == 10:
+                                        self.logging.debug("Running inside run() I caught a pattern: "+string)
+                                    worker = Thread(target=self.mail_worker, args=(string, queue, dictionary,))
+                                    worker.start()
+                                    worker.join()
+                                    q_list = queue.get()
+                                    if q_list[1] == "SUCCESS":
+                                        if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                            self.logging.info(" Thread "+str(q_list[0])+" delivered mail with content: " + string)
+                                            journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
+                                        else:
+                                            journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
+                                    elif q_list[1] == "FAILURE":
+                                        if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                            self.logging.info(" at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                            journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                        else:
+                                            journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                     else:
-                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
-                                elif q_list[1] == "FAILURE":
-                                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                        self.logging.info(" at "+str(q_list[0])+" failed to deliver mail with content: " + string)
-                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
-                                    else:
-                                        journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                        if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
+                                            self.logging.info(" failed to deliver mail with content " + string)
+                                            journal.send("systemd-mailify: failed to deliver mail with content: " + string)
+                                        else:
+                                            journal.send("systemd-mailify: failed to deliver mail with content " + string)
                                 else:
-                                    if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                        self.logging.info(" failed to deliver mail with content " + string)
-                                        journal.send("systemd-mailify: failed to deliver mail with content: " + string)
-                                    else:
-                                        journal.send("systemd-mailify: failed to deliver mail with content " + string)
-
-                            else:
-                                continue
-                        except Exception as ex:
-                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                            message = template.format(type(ex).__name__, ex.args)
-                            journal.send("systemd-mailify: "+message)
+                                    continue
+                            except Exception as ex:
+                                templatede = "An exception of type {0} occured. Arguments:\n{1!r}"
+                                messagede = templatede.format(type(ex).__name__, ex.args)
+                                journal.send("systemd-mailify: "+messagede)
                             if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                self.logging.error(message)
+                                self.logging.error(messagede)
                     else:
                         continue
            #back to normal journal reading

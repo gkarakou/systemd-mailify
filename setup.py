@@ -27,7 +27,7 @@ from distutils.core import setup
 
 setup(
 name = 'systemd-mailify',
-version = '1.0',
+version = '1.1',
 description = 'Provides mailing notifications for failed systemd services',
 long_description = 'A python based service that mail-ifies failed systemd services',
 author = 'George Karakougioumtzis <gkarakou>',
@@ -38,7 +38,7 @@ license = 'GPL-3.0',
 packages = ['systemd-mailify'],
 package_data = {'systemd-mailify': ['conf/*']},
 install_requires= ['python-systemd'],
-classifiers = ['Development Status :: 1.0 - Stable',
+classifiers = ['Development Status :: 1.1 - Stable',
 'Environment :: Server',
 'Intended Audience :: System Administrators',
 'License :: GPL-3.0 ',

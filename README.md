@@ -2,7 +2,7 @@
 
 GENERAL
 -------------------
-systemd-mailify is a slightly modified, stripped down version of its counterpart systemd-denotify with a minimum set of dependencies. Its use is server oriented as opposed to systemd-denotify which is aiming at desktops. You can get mail notifications on systemd service failures on a production machine.
+systemd-mailify is a slightly modified, stripped down version of its counterpart systemd-denotify with a minimum set of dependencies. Its use is server oriented as opposed to systemd-denotify which is aiming at desktops. You can get mail notifications on systemd service failures and when specific phrases match in the journal(new feature on v1.1), on a production machine.
 systemd-mailify is not to be confused with the systemd family of daemons; Its a standalone python program which took half of its name to honour its dependency python-systemd.
 
 Note:  An selinux policy module will also be available later for redhat based distros.
@@ -39,8 +39,10 @@ git clone https://github.com/gkarakou/systemd-mailify.git
 cd systemd-mailify
 
 sudo python setup.py bdist_rpm --requires "python, systemd-python, systemd, systemd-libs " --build-requires="python-setuptools" --vendor="gkarakou@gmail.com"
-
+#this will produce an rpm package inside the dist directory, it could be named differently depending on the version
 sudo yum --nogpgcheck localinstall dist/systemd-mailify-1.0-1.noarch.rpm
+#For fedora 22/23
+sudo dnf --nogpgcheck localinstall dist/systemd-mailify-1.0-1.noarch.rpm
 
 </pre>
 
