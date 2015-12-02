@@ -6,11 +6,12 @@ import email.utils
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from .logreader import LogReader
+from .loggger import Loggger
 
 class Mailer():
     def __init__(self):
-        self.log_reader = LogReader()
-        self.name = self.log_reader.name
+        self.log_ger = Loggger()
+        self.name = self.log_ger.name
 
     def mail_worker(self, stri, que, dictio):
         """
@@ -21,9 +22,9 @@ class Mailer():
         containing config options necessary for the mail to be delivered.
         """
 
-        if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" and\
-        self.log_reader.logg_level == 10:
-            self.log_reader.logging.debug('Running inside mail_worker()')
+        if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" and\
+        self.log_ger.logg_level == 10:
+            self.log_ger.logging.debug('Running inside mail_worker()')
         dictionary = dictio
         msg = MIMEMultipart("alternative")
         #get it from the queue?
@@ -49,8 +50,8 @@ class Mailer():
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" or self.log_reader.logg_facility == "both":
-                        self.log_reader.logging.error(message)
+                    if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" or self.log_ger.logg_facility == "both":
+                        self.log_ger.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -70,8 +71,8 @@ class Mailer():
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" or self.log_reader.logg_facility == "both":
-                        self.log_reader.logging.error(message)
+                    if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" or self.log_ger.logg_facility == "both":
+                        self.log_ger.logging.error(message)
                 finally:
                      s.quit()
                      del s
@@ -102,8 +103,8 @@ class Mailer():
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" or self.log_reader.logg_facility == "both":
-                        self.log_reader.logging.error(message)
+                    if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" or self.log_ger.logg_facility == "both":
+                        self.log_ger.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -133,8 +134,8 @@ class Mailer():
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" or self.log_reader.logg_facility == "both":
-                        self.log_reader.logging.error(message)
+                    if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" or self.log_ger.logg_facility == "both":
+                        self.log_ger.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -171,8 +172,8 @@ class Mailer():
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" or self.log_reader.logg_facility == "both":
-                        self.log_reader.logging.error(message)
+                    if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" or self.log_ger.logg_facility == "both":
+                        self.log_ger.logging.error(message)
                 finally:
                     s.quit()
                     del s
@@ -207,9 +208,9 @@ class Mailer():
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
                     journal.send("systemd-mailify: "+message)
-                    if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file"\
-                    or self.log_reader.logg_facility == "both":
-                        self.log_reader.logging.error(message)
+                    if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file"\
+                    or self.log_ger.logg_facility == "both":
+                        self.log_ger.logging.error(message)
                 finally:
                     s.quit()
                     del s

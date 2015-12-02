@@ -9,6 +9,7 @@ from multiprocessing import Process
 from .configreader import ConfigReader
 from .systemfuncs import SystemFuncs
 from .mailer import Mailer
+from .loggger import Loggger
 import ConfigParser
 import os
 import logging
@@ -31,63 +32,7 @@ class LogReader(Process):
         Creates some members to be used in the instance about logging
         """
         super(LogReader, self).__init__()
-        conf = ConfigParser.RawConfigParser()
-        conf.read('/etc/systemd-mailify.conf')
-        user = conf.get("SYSTEMD-MAILIFY", "user")
-        if len(user) == 0:
-            user = "root"
-        log = conf.get("LOGGING", "log")
-        if log == "log_file":
-            self.logg_facility = "log_file"
-        elif log == "journal":
-            self.logg_facility = "journal"
-        else:
-            self.logg_facility = "both"
-        conf_reader = ConfigReader()
-        uid = conf_reader.get_conf_userid(user)
-        gid = 0
-        if log == "log_file" or log == "both":
-            if  os.path.isfile("/var/log/systemd-mailify.log"):
-                try:
-                    os.chown("/var/log/systemd-mailify.log", uid, gid)
-                    os.chmod("/var/log/systemd-mailify.log", 436)
-                except Exception as ex:
-                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+ message)
-                    journal.send("systemd-mailify: there is a problem chowning/chmoding the log file. Please check the unit file for the CAP_CHOWN/CAP_FOWNER capability ")
-            else:
-                #create log file and chown/chmod
-                try:
-                    with open('/var/log/systemd-mailify.log', 'a+') as f:
-                        f.write()
-                except Exception as ex:
-                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                try:
-                    os.chown("/var/log/systemd-mailify.log", uid, gid)
-                    os.chmod("/var/log/systemd-mailify.log", 436)
-                except Exception as ex:
-                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    journal.send("systemd-mailify: "+ message)
-                    journal.send("systemd-mailify: there is a problem chowning/chmoding the log file. Please check the unit file for the CAP_CHOWN/CAP_FOWNER capability ")
-            self.logg = True
-        else:
-            #journal logging
-            self.logg = False
-        log_level = conf.get("LOGGING", "log_level")
-        str_to_num = {"ERROR":40, "CRITICAL":50, "DEBUG":10, "INFO":20, "WARNING":30}
-        for key, value in str_to_num.iteritems():
-            if log_level == key:
-                self.logg_level = value
-        if log == "log_file" or log == "both":
-            formatter = '%(asctime)s %(levelname)s %(message)s'
-            logging.basicConfig(filename='/var/log/systemd-mailify.log', level=self.logg_level, format=formatter)
-            self.logging = logging
-        else:
-            self.logging = None
-
+        self.loggger = Loggger()
     def run(self):
         """
         run
@@ -97,9 +42,9 @@ class LogReader(Process):
         """
         # do setuid, setgid voodo magic
 
-        if self.logg == True and self.logg_facility == "log_file" and\
-        self.logg_level == 10:
-            self.logging.debug('Running inside run()')
+        if self.loggger.logg == True and self.loggger.logg_facility == "log_file" and\
+        self.loggger.logg_level == 10:
+            self.loggger.logging.debug('Running inside run()')
         conf_reader = ConfigReader()
         dictionary = conf_reader.parse_config()
         patterns = []
@@ -114,9 +59,9 @@ class LogReader(Process):
         sys_funcs.set_euid(uid)
         queue = Queue()
         mailler = Mailer()
-        if self.logg == True and self.logg_facility == "log_file" and\
-        self.logg_level == 10:
-            self.logging.debug('Running inside run() '+' is there an init Queue object: '+ str(queue))
+        if self.loggger.logg == True and self.loggger.logg_facility == "log_file" and\
+        self.loggger.logg_level == 10:
+            self.loggger.logging.debug('Running inside run() '+' is there an init Queue object: '+ str(queue))
         try:
             j_reader = journal.Reader()
         except Exception as ex:
@@ -140,10 +85,10 @@ class LogReader(Process):
         while poller.poll():
             #next is a debugging call
             # if it logs True it is pollable
-            #if self.logg == True and self.logg_facility == "log_file" and\
-            #self.logg_level == 10:
+            #if self.loggger.logg == True and self.loggger.logg_facility == "log_file" and\
+            #self.loggger.logg_level == 10:
             #    reliable = j_reader.reliable_fd()
-            #    self.logging.debug('Running inside run method I called poller.poll() and try now to determine whether we have a reliable file descriptor to the journal file : '+ str(reliable))
+            #    self.loggger.logging.debug('Running inside run method I called poller.poll() and try now to determine whether we have a reliable file descriptor to the journal file : '+ str(reliable))
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting == 1 or waiting == 2:
@@ -154,27 +99,27 @@ class LogReader(Process):
                             try:
                                 string = entry['MESSAGE']
                                 if string and pattern in string:
-                                    if self.logg == True and self.logg_facility == "log_file" and self.logg_level == 10:
-                                        self.logging.debug("Running inside run() I caught a pattern: "+string)
+                                    if self.loggger.logg == True and self.loggger.logg_facility == "log_file" and self.loggger.logg_level == 10:
+                                        self.loggger.logging.debug("Running inside run() I caught a pattern: "+string)
                                     worker = Thread(target=mailler.mail_worker, args=(string, queue, dictionary,))
                                     worker.start()
                                     worker.join()
                                     q_list = queue.get()
                                     if q_list[1] == "SUCCESS":
-                                        if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                            self.logging.info(" Thread "+str(q_list[0])+" delivered mail with content: " + string)
+                                        if self.loggger.logg == True and self.loggger.logg_facility == "log_file" or self.loggger.logg_facility == "both":
+                                            self.loggger.logging.info(" Thread "+str(q_list[0])+" delivered mail with content: " + string)
                                             journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
                                         else:
                                             journal.send("systemd-mailify: Thread "+str(q_list[0])+" delivered mail with content: " + string)
                                     elif q_list[1] == "FAILURE":
-                                        if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                            self.logging.info(" at "+str(q_list[0])+" failed to deliver mail with content: " + string)
+                                        if self.loggger.logg == True and self.loggger.logg_facility == "log_file" or self.loggger.logg_facility == "both":
+                                            self.loggger.logging.info(" at "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                             journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                         else:
                                             journal.send("systemd-mailify: Thread "+str(q_list[0])+" failed to deliver mail with content: " + string)
                                     else:
-                                        if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                            self.logging.info(" failed to deliver mail with content " + string)
+                                        if self.loggger.logg == True and self.loggger.logg_facility == "log_file" or self.loggger.logg_facility == "both":
+                                            self.loggger.logging.info(" failed to deliver mail with content " + string)
                                             journal.send("systemd-mailify: failed to deliver mail with content: " + string)
                                         else:
                                             journal.send("systemd-mailify: failed to deliver mail with content " + string)
@@ -184,8 +129,8 @@ class LogReader(Process):
                                 templatede = "An exception of type {0} occured. Arguments:\n{1!r}"
                                 messagede = templatede.format(type(ex).__name__, ex.args)
                                 journal.send("systemd-mailify: "+messagede)
-                            if self.logg == True and self.logg_facility == "log_file" or self.logg_facility == "both":
-                                self.logging.error(messagede)
+                            if self.loggger.logg == True and self.loggger.logg_facility == "log_file" or self.loggger.logg_facility == "both":
+                                self.loggger.logging.error(messagede)
                     else:
                         continue
            #back to normal journal reading

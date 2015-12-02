@@ -3,10 +3,11 @@
 from systemd import journal
 import os
 from .logreader import LogReader
+from .loggger import Loggger
 
 class SystemFuncs():
     def __init__(self):
-       self.log_reader = LogReader()
+       self.log_ger = Loggger()
 
     def get_euid(self):
         """
@@ -16,10 +17,10 @@ class SystemFuncs():
         """
         euid = os.geteuid()
         ppid = os.getpid()
-        if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" and\
-        self.log_reader.logg_level == 10:
-            self.log_reader.logging.debug("Running inside get_euid(): euid == "+str(euid))
-            self.log_reader.logging.debug("Running inside get_euid(): pid == "+str(ppid))
+        if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" and\
+        self.log_ger.logg_level == 10:
+            self.log_ger.logging.debug("Running inside get_euid(): euid == "+str(euid))
+            self.log_ger.logging.debug("Running inside get_euid(): pid == "+str(ppid))
         return euid
 
     def set_euid(self, uid):
@@ -37,14 +38,14 @@ class SystemFuncs():
             messag = templat.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: Error setting euid " + messag)
         if setuid == None:
-            if self.log_reader.logg == True:
-                self.log_reader.logging.debug('Running inside set_euid() and trying to set effective uid: '+ str(self.get_euid()))
+            if self.log_ger.logg == True:
+                self.log_ger.logging.debug('Running inside set_euid() and trying to set effective uid: '+ str(self.get_euid()))
         else:
-            if self.log_reader.logg == True and self.log_reader.logg_facility == "both":
-                self.log_reader.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+            if self.log_ger.logg == True and self.log_ger.logg_facility == "both":
+                self.log_ger.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
                 journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
-            elif self.log_reader.logg == True and self.log_reader.logg_facility == "log_file":
-                self.log_reader.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
+            elif self.log_ger.logg == True and self.log_ger.logg_facility == "log_file":
+                self.log_ger.logging.error("there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
 
             else:
                 journal.send("systemd-mailify: there is a problem setting the correct uid for the process to run as. Please check the unit file for the CAP_SETUID capability ")
@@ -56,9 +57,9 @@ class SystemFuncs():
         return int
         """
         egid = os.getegid()
-        if self.log_reader.logg == True and self.log_reader.logg_facility == "log_file" and\
-        self.log_reader.logg_level == 10:
-            self.log_reader.logging.debug("Running inside get_egid(): egid == "+str(egid))
+        if self.log_ger.logg == True and self.log_ger.logg_facility == "log_file" and\
+        self.log_ger.logg_level == 10:
+            self.log_ger.logging.debug("Running inside get_egid(): egid == "+str(egid))
         return egid
 
     def set_egid(self):
@@ -71,16 +72,16 @@ class SystemFuncs():
         egid = 190
         gid = os.setegid(egid)
         if gid == None:
-            if self.log_reader.logg == True:
-                self.log_reader.logging.debug('Running inside set_egid() trying to egid=190 to the process: '+ str(self.get_egid()))
+            if self.log_ger.logg == True:
+                self.log_ger.logging.debug('Running inside set_egid() trying to egid=190 to the process: '+ str(self.get_egid()))
             else:
                 pass
         else:
-            if self.log_reader.logg == True and self.log_reader.logg_facility == "both":
-                self.log_reader.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
+            if self.log_ger.logg == True and self.log_ger.logg_facility == "both":
+                self.log_ger.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
                 journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
-            elif self.log_reader.logg == True and self.log_reader.logg_facility == "log_file":
-                self.log_reader.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
+            elif self.log_ger.logg == True and self.log_ger.logg_facility == "log_file":
+                self.log_ger.logging.error("there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
             else:
                 journal.send("systemd-mailify: there is a problem setting the correct gid for the process to run as. Please check the unit file for the CAP_SETGID capability ")
 

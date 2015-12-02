@@ -5,6 +5,7 @@ import ConfigParser
 import sys
 from pwd import getpwnam
 from .logreader import LogReader
+from .loggger import Loggger
 
 class ConfigReader():
 
@@ -34,7 +35,7 @@ class ConfigReader():
         from the /etc/systemd-mailify.conf file (minus the global section)
         return dict
         """
-        log_reader = LogReader()
+        log_ger = Loggger()
         conf = ConfigParser.RawConfigParser()
         conf.read('/etc/systemd-mailify.conf')
         conf_dict = {}
@@ -63,21 +64,21 @@ class ConfigReader():
         if auth and auth == True:
             auth_user = conf.get("AUTH", "auth_user")
             if len(auth_user) == 0:
-                if log_reader.logg == True and log_reader.logg_facility == "both":
-                    log_reader.logging.error("You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
+                if log_ger.logg == True and log_ger.logg_facility == "both":
+                    log_ger.logging.error("You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
                     journal.send("systemd-mailify: ERROR You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
-                elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                    log_reader.logging.error("You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
+                elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                    log_ger.logging.error("You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
                 else:
                     journal.send("systemd-mailify: ERROR You have asked for authentication but you have an empty auth_user name. Please update the /etc/systemd-mailify.conf file with a value ")
                 sys.exit(1)
             auth_password = conf.get("AUTH", "auth_password")
             if len(auth_password) == 0:
-                if log_reader.logg == True and log_reader.logg_facility == "both":
-                    log_reader.logging.error("You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
+                if log_ger.logg == True and log_ger.logg_facility == "both":
+                    log_ger.logging.error("You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
                     journal.send("systemd-mailify: ERROR You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
-                elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                    log_reader.logging.error("You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
+                elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                    log_ger.logging.error("You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
                 else:
                     journal.send("systemd-mailify: ERROR You have asked for authentication but you have an empty auth_password field. Please update the /etc/systemd-mailify.conf file with a value ")
                 sys.exit(1)
@@ -96,22 +97,22 @@ class ConfigReader():
         smtp_host = conf.get("SMTP", "host")
         if len(smtp_host) == 0:
             smtp_host = "localhost"
-            if log_reader.logg == True and log_reader.logg_facility == "both":
-                log_reader.logging.info("You have asked for smtp connection but you have an empty smtp host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
+            if log_ger.logg == True and log_ger.logg_facility == "both":
+                log_ger.logging.info("You have asked for smtp connection but you have an empty smtp host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
                 journal.send("systemd-mailify: INFO You have asked for a smtp connection but you have an empty smtp host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
-            elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                log_reader.logging.info("You have asked for smtp connection but you have an empty smtp host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
+            elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                log_ger.logging.info("You have asked for smtp connection but you have an empty smtp host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
             else:
                 journal.send("systemd-mailify: INFO You have asked for a smtp  connection but you have an empty smtp host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
         conf_dict['smtp_host'] = smtp_host
         smtp_port = conf.getint("SMTP", "port")
         if not smtp_port:
             smtp_port = 25
-            if log_reader.logg == True and log_reader.logg_facility == "both":
-                log_reader.logging.error("You have asked for smtp connection but you have an empty smtp port field. Please update the /etc/systemd-mailify.conf file with a value. port=25")
+            if log_ger.logg == True and log_ger.logg_facility == "both":
+                log_ger.logging.error("You have asked for smtp connection but you have an empty smtp port field. Please update the /etc/systemd-mailify.conf file with a value. port=25")
                 journal.send("systemd-mailify: ERROR You have asked for a smtp connection but you have an empty smtp port  field. Please update the /etc/systemd-mailify.conf file with a value. port=25 ")
-            elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                log_reader.logging.error("You have asked for smtp connection but you have an empty smtp port field. Please update the /etc/systemd-mailify.conf file with a value. port=25")
+            elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                log_ger.logging.error("You have asked for smtp connection but you have an empty smtp port field. Please update the /etc/systemd-mailify.conf file with a value. port=25")
             else:
                 journal.send("systemd-mailify: ERROR You have asked for a smtp connection but you have an empty smtp port field. Please update the /etc/systemd-mailify.conf file with a value. port=25 ")
 
@@ -124,22 +125,22 @@ class ConfigReader():
             smtps_host = conf.get("SMTPS", "host")
             if len(smtps_host) == 0:
                 smtps_host = "localhost"
-                if log_reader.logg == True and log_reader.logg_facility == "both":
-                    log_reader.logging.info("You have asked for smtps connection but you have an empty smtps host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
+                if log_ger.logg == True and log_ger.logg_facility == "both":
+                    log_ger.logging.info("You have asked for smtps connection but you have an empty smtps host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
                     journal.send("systemd-mailify: INFO You have asked for a smtps connection but you have an empty smtps host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
-                elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                    log_reader.logging.info("You have asked for smtps connection but you have an empty smtps host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
+                elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                    log_ger.logging.info("You have asked for smtps connection but you have an empty smtps host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
                 else:
                     journal.send("systemd-mailify: INFO You have asked for a smtps connection but you have an empty smtps host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
             conf_dict['smtps_host'] = smtps_host
             smtps_port = conf.getint("SMTPS", "port")
             if not smtps_port:
                 smtps_port = 465
-                if log_reader.logg == True and log_reader.logg_facility == "both":
-                    log_reader.logging.error("You have asked for smtps connection but you have an empty smtps port field. Please update the /etc/systemd-mailify.conf file with a value. port=465 ")
+                if log_ger.logg == True and log_ger.logg_facility == "both":
+                    log_ger.logging.error("You have asked for smtps connection but you have an empty smtps port field. Please update the /etc/systemd-mailify.conf file with a value. port=465 ")
                     journal.send("systemd-mailify: ERROR You have asked for a  smtps connection but you have an empty smtps port field. Please update the /etc/systemd-mailify.conf file with a value. port=465")
-                elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                    log_reader.logging.error("You have asked for smtps connection but you have an empty smtps port field. Please update the /etc/systemd-mailify.conf file with a value. port=465")
+                elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                    log_ger.logging.error("You have asked for smtps connection but you have an empty smtps port field. Please update the /etc/systemd-mailify.conf file with a value. port=465")
                 else:
                     journal.send("systemd-mailify: ERROR You have asked for a smtps connection but you have an empty smtps port field. Please update the /etc/systemd-mailify.conf file with a value. port=465 ")
             conf_dict['smtps_port'] = smtps_port
@@ -157,22 +158,22 @@ class ConfigReader():
             starttls_host = conf.get("STARTTLS", "host")
             if len(starttls_host) == 0:
                 starttls_host = "localhost"
-                if log_reader.logg == True and log_reader.logg_facility == "both":
-                    log_reader.logging.info("You have asked for starttls connection but you have an empty starttls host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
+                if log_ger.logg == True and log_ger.logg_facility == "both":
+                    log_ger.logging.info("You have asked for starttls connection but you have an empty starttls host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
                     journal.send("systemd-mailify: INFO You have asked for a starttls connection but you have an empty starttls host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
-                elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                    log_reader.logging.info("You have asked for starttls connection but  you have an empty starttls host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
+                elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                    log_ger.logging.info("You have asked for starttls connection but  you have an empty starttls host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
                 else:
                     journal.send("systemd-mailify: INFO You have asked for a starttls connection but you have an empty starttls host field. Please update the /etc/systemd-mailify.conf file with a value. We assume localhost here")
             conf_dict['starttls_host'] = starttls_host
             starttls_port = conf.getint("STARTTLS", "port")
             if not starttls_port:
                 starttls_port = 587
-                if log_reader.logg == True and log_reader.logg_facility == "both":
-                    log_reader.logging.error("You have asked for starttls connection but you have an empty starttls port field. Please update the /etc/systemd-mailify.conf file with a value. port=587")
+                if log_ger.logg == True and log_ger.logg_facility == "both":
+                    log_ger.logging.error("You have asked for starttls connection but you have an empty starttls port field. Please update the /etc/systemd-mailify.conf file with a value. port=587")
                     journal.send("systemd-mailify: ERROR You have asked for a starttls connection but you have an empty starttls port field. Please update the /etc/systemd-mailify.conf file with a value. port=587")
-                elif log_reader.logg == True and log_reader.logg_facility == "log_file":
-                    log_reader.logging.error("You have asked for starttls connection but you have an empty starttls port field. Please update the /etc/systemd-mailify.conf file with a value. port=587 ")
+                elif log_ger.logg == True and log_ger.logg_facility == "log_file":
+                    log_ger.logging.error("You have asked for starttls connection but you have an empty starttls port field. Please update the /etc/systemd-mailify.conf file with a value. port=587 ")
                 else:
                     journal.send("systemd-mailify: ERROR You have asked for a starttls connection but you have an empty starttls port field. Please update the /etc/systemd-mailify.conf file with a value.port= 587")
             conf_dict['starttls_port'] = starttls_port
@@ -183,8 +184,8 @@ class ConfigReader():
         else:
             conf_dict['starttls'] = False
         #iter through dict sections and check whether there are empty values
-        if log_reader.logg == True and log_reader.logg_facility == "log_file" and\
-        log_reader.logg_level == 10:
+        if log_ger.logg == True and log_ger.logg_facility == "log_file" and\
+        log_ger.logg_level == 10:
             for key, val in conf_dict.iteritems():
-                log_reader.logging.debug("config_file: entry == " + str(key)+ " value == "+ str(val))
+                log_ger.logging.debug("config_file: entry == " + str(key)+ " value == "+ str(val))
         return conf_dict
