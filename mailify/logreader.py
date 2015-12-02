@@ -10,9 +10,6 @@ from .configreader import ConfigReader
 from .systemfuncs import SystemFuncs
 from .mailer import Mailer
 from .loggger import Loggger
-import ConfigParser
-import os
-import logging
 
 class LogReader(Process):
     """
@@ -33,6 +30,7 @@ class LogReader(Process):
         """
         super(LogReader, self).__init__()
         self.loggger = Loggger()
+
     def run(self):
         """
         run

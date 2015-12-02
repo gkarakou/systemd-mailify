@@ -5,13 +5,12 @@ import smtplib
 import email.utils
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from .logreader import LogReader
 from .loggger import Loggger
 
 class Mailer():
     def __init__(self):
         self.log_ger = Loggger()
-        self.name = self.log_ger.name
+        self.name = ""
 
     def mail_worker(self, stri, que, dictio):
         """
