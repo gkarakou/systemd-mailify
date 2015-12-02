@@ -1,0 +1,49 @@
+
+module systemd-mailify_local 1.0;
+
+require {
+	type systemd_unit_file_t;
+	type smtp_packet_t;
+	type init_t;
+	type abrt_var_run_t;
+	type xguest_t;
+	type etc_t;
+	type abrt_t;
+	type rpm_var_lib_t;
+	type dns_packet_t;
+	type init_var_run_t;
+	type bin_t;
+	type smtp_port_t;
+	type smtpd_packet_t;
+	class service { start stop };
+	class unix_stream_socket connectto;
+	class packet send;
+	class tcp_socket name_connect;
+	class file { setattr read write relabelto unlink open };
+	class sock_file write;
+}
+
+#============= init_t ==============
+
+#!!!! The file '/run/abrt/abrt.socket' is mislabeled on your system.  
+#!!!! Fix with $ restorecon -R -v /run/abrt/abrt.socket
+allow init_t abrt_t:unix_stream_socket connectto;
+allow init_t abrt_var_run_t:sock_file write;
+allow init_t dns_packet_t:packet send;
+allow init_t rpm_var_lib_t:file open;
+allow init_t smtp_packet_t:packet send;
+
+#!!!! This avc can be allowed using the boolean 'nis_enabled'
+allow init_t smtp_port_t:tcp_socket name_connect;
+allow init_t smtpd_packet_t:packet send;
+
+#============= xguest_t ==============
+
+#!!!! WARNING: 'bin_t' is a base type.
+allow xguest_t bin_t:file { write relabelto unlink setattr };
+
+#!!!! WARNING: 'etc_t' is a base type.
+allow xguest_t etc_t:file { write setattr };
+allow xguest_t init_var_run_t:file { read open };
+allow xguest_t systemd_unit_file_t:file { read open setattr };
+allow xguest_t systemd_unit_file_t:service { start stop };
