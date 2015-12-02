@@ -40,9 +40,9 @@ cd systemd-mailify
 
 sudo python setup.py bdist_rpm --requires "python, systemd-python, systemd, systemd-libs " --build-requires="python-setuptools" --vendor="gkarakou@gmail.com"
 #this will produce an rpm package inside the dist directory, it could be named differently depending on the version
-sudo yum --nogpgcheck localinstall dist/systemd-mailify-1.0-1.noarch.rpm
+sudo yum --nogpgcheck localinstall dist/systemd-mailify-1.1-1.noarch.rpm
 #For fedora 22/23
-sudo dnf --nogpgcheck localinstall dist/systemd-mailify-1.0-1.noarch.rpm
+sudo dnf --nogpgcheck install dist/systemd-mailify-1.1-1.noarch.rpm
 
 </pre>
 
