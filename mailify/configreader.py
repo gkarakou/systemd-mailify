@@ -4,7 +4,6 @@ from systemd import journal
 import ConfigParser
 import sys
 from pwd import getpwnam
-from .logreader import LogReader
 from .loggger import Loggger
 
 class ConfigReader():

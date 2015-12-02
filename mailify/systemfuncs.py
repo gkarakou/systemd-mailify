@@ -2,7 +2,6 @@
 #encoding=utf-8
 from systemd import journal
 import os
-from .logreader import LogReader
 from .loggger import Loggger
 
 class SystemFuncs():
