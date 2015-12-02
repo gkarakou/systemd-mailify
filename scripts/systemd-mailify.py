@@ -3,7 +3,7 @@
 from systemd import journal
 from systemd import daemon
 import ConfigParser
-from mailify import LogReader
+from mailify.logreader import LogReader
 import os
 
 if __name__ == "__main__":
