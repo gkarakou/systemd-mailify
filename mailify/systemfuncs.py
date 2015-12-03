@@ -7,7 +7,7 @@ from pwd import getpwnam
 
 class SystemFuncs():
     def __init__(self):
-       self.log_ger = Loggger()
+        self.log_ger = Loggger()
 
     def get_conf_userid(self, name):
         """

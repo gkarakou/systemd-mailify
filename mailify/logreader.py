@@ -47,8 +47,8 @@ class LogReader(Process):
         dictionary = conf_reader.parse_config()
         patterns = []
         if isinstance(dictionary['conf_pattern_matcher_start'], bool) and  dictionary['conf_pattern_matcher_start'] == True:
-            for p in dictionary['conf_pattern_patterns']:
-                patterns.append(p)
+            for pat in dictionary['conf_pattern_patterns']:
+                patterns.append(pat)
         patterns.append("entered failed state")
         username = dictionary["user"]
         sys_funcs = SystemFuncs()
