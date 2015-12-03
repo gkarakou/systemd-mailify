@@ -3,7 +3,6 @@
 from systemd import journal
 import ConfigParser
 import sys
-from pwd import getpwnam
 from .loggger import Loggger
 
 class ConfigReader():
@@ -11,20 +10,6 @@ class ConfigReader():
     def __init__(self):
         pass
 
-    def get_conf_userid(self, name):
-        """
-        get_user
-        :desc : Function that returns user id as int from config
-        return int
-        """
-
-        try:
-            username_to_id = getpwnam(name).pw_uid
-        except Exception as ex:
-            template = "An exception of type {0} occured. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            journal.send("systemd-mailify: Error getting uid from the username provided in the .conf"+ message)
-        return username_to_id
 
 
     def parse_config(self):

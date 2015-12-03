@@ -51,8 +51,8 @@ class LogReader(Process):
                 patterns.append(p)
         patterns.append("entered failed state")
         username = dictionary["user"]
-        uid = conf_reader.get_conf_userid(username)
         sys_funcs = SystemFuncs()
+        uid = sys_funcs.get_conf_userid(username)
         sys_funcs.set_egid()
         sys_funcs.set_euid(uid)
         queue = Queue()
