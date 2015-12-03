@@ -127,8 +127,8 @@ class LogReader(Process):
                                 templatede = "An exception of type {0} occured. Arguments:\n{1!r}"
                                 messagede = templatede.format(type(ex).__name__, ex.args)
                                 journal.send("systemd-mailify: "+messagede)
-                            if loggger.logg == True and loggger.logg_facility == "log_file" or loggger.logg_facility == "both":
-                                loggger.logging.error(messagede)
+                                if loggger.logg == True and loggger.logg_facility == "log_file" or loggger.logg_facility == "both":
+                                    loggger.logging.error(messagede)
                     else:
                         continue
            #back to normal journal reading
