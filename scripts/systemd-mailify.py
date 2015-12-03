@@ -3,6 +3,7 @@
 from systemd import journal
 from systemd import daemon
 import ConfigParser
+from mailify.loggger import Loggger
 from mailify.logreader import LogReader
 import os
 
@@ -39,6 +40,7 @@ if __name__ == "__main__":
                 /etc/systemd-mailify.conf [SYSTEMD-MAILIFY] start value. Exiting...")
 
     if isinstance(config_logreader_start, bool) and config_logreader_start == True:
+        loog = Loggger()
         lg = LogReader()
         pid = os.getpid()
         try:
@@ -48,10 +50,10 @@ if __name__ == "__main__":
             templated = "An exception of type {0} occured. Arguments:\n{1!r}"
             messaged = templated.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messaged)
-            if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
-                lg.logging.error(message)
+            if loog.logg == True and loog.logg_facility == "log_file" or loog.logg_facility == "both":
+                loog.logging.error(message)
         finally:
-            if lg.logg == True and lg.logg_facility == "log_file" or lg.logg_facility == "both":
-                lg.logging.info("systemd-mailify started")
+            if loog.logg == True and loog.logg_facility == "log_file" or loog.logg_facility == "both":
+                loog.logging.info("systemd-mailify started")
             daemon.notify(status="READY=1", unset_environment=False)
             lg.run()
