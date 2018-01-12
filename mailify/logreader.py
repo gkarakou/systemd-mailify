@@ -110,8 +110,7 @@ class LogReader(Process):
                                             journal.send("systemd-mailify: failed to deliver mail with content: " + string)
                                         else:
                                             journal.send("systemd-mailify: failed to deliver mail with content " + string)
-                                else:
-                                    continue
+                                    break
                             except Exception as ex:
                                 templatede = "An exception of type {0} occured. Arguments:\n{1!r}"
                                 messagede = templatede.format(type(ex).__name__, ex.args)
