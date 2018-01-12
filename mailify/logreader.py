@@ -67,11 +67,6 @@ class LogReader(Process):
             messa = templa.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messa)
         j_reader.log_level(journal.LOG_INFO)
-        # j.seek_tail() #faulty->doesn't move the cursor to the end of journal
-
-        # it is questionable whether there is actually a record with the real
-        # datetime we provide but we assume it moves the cursor to somewhere
-        # near the end of the journal fd
         j_reader.seek_realtime(datetime.now())
         poller = select.poll()
         try:
@@ -81,12 +76,6 @@ class LogReader(Process):
             messa = templa.format(type(ex).__name__, ex.args)
             journal.send("systemd-mailify: "+messa)
         while poller.poll():
-            #next is a debugging call
-            # if it logs True it is pollable
-            #if loggger.logg == True and loggger.logg_facility == "log_file" and\
-            #loggger.logg_level == 10:
-            #    reliable = j_reader.reliable_fd()
-            #    loggger.logging.debug('Running inside run method I called poller.poll() and try now to determine whether we have a reliable file descriptor to the journal file : '+ str(reliable))
             waiting = j_reader.process()
             # if JOURNAL append or JOURNAL logrotate
             if waiting == 1 or waiting == 2:
@@ -129,9 +118,3 @@ class LogReader(Process):
                                 journal.send("systemd-mailify: "+messagede)
                                 if loggger.logg == True and loggger.logg_facility == "log_file" or loggger.logg_facility == "both":
                                     loggger.logging.error(messagede)
-                    else:
-                        continue
-           #back to normal journal reading
-            else:
-                pass
-            continue
